@@ -5,6 +5,8 @@ A discord bot written in python
 # Installation
 * install python 3.8.1: https://www.python.org/downloads/release/python-381/
 
+* Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
+
 * Download the bot, either as a zip (unzip it where you want it) or clone it
 
 * Open up a command prompt in the new folder
