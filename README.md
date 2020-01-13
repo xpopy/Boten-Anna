@@ -11,11 +11,11 @@ A discord bot written in python
 
 * Open up a command prompt or powershell in the new folder (shift rightclick the folder > open powershell window here)
 
-* Install pipenv: `pip install pipenv`, pipenv is a python environment which keeps all the dependencies which is good if you have multiple python projects
+* `pip install pipenv`: Installs pipenv, a python environment which keeps all the dependencies which is good if you have multiple python projects
 
-* Open a new python environment: `pipenv shell`
+* `pipenv shell`: Opens a new python environment
 
-* Install all dependencies: `pipenv install`
+* `pipenv install`: Install all dependencies
 
 * In /settings/config.json, edit the "INSERT DISCORD TOKEN" with your own discord token (https://discordapp.com/developers/applications/, create application and get the bot token on the "Bot" tab)
 
