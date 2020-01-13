@@ -3,9 +3,11 @@ A discord bot written in python
 
 
 # Installation (Windows)
-1. Install python 3.8.1: Go to https://www.python.org/downloads/release/python-381/ and download "Windows x86-64 executable installer"
+1. Install python 3.8.1:
 
-   1. Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
+   1. Go to https://www.python.org/downloads/release/python-381/ and download "Windows x86-64 executable installer"
+
+   2. Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
 
 2. Download the bot, either as a zip (unzip it where you want it) or clone it
 
@@ -13,7 +15,7 @@ A discord bot written in python
     
     1. Open up a command prompt or powershell in the new folder (shift rightclick the folder > open powershell window here)
 
-    2. `pip install pipenv`: Installs pipenv, a python environment which keeps all the dependencies separate from the system python install
+    2. `pip install pipenv`: Installs pipenv
 
     3. `pipenv install`: Install all dependencies needed for the bot to run. 
     
@@ -42,11 +44,17 @@ A discord bot written in python
 
         4. In the new window, click on `New` and type in `C:\ffmpeg\bin\` and hit enter, now hit `OK` on the open windows
 
-5. Bot tokens:
+5. API tokens:
 
-    1. In /settings/config.json, edit the "INSERT DISCORD TOKEN" with your own discord token (https://discordapp.com/developers/applications/, create application and get the bot token on the "Bot" tab)
+    1. In /settings/config.json, edit the "INSERT DISCORD TOKEN" with your own discord token:
+         1. Go to https://discordapp.com/developers/applications/
+         2. Create an application
+         3. Get the bot token on the "Bot" tab
 
-    2. In /settings/config.json, edit the "INSERT TENOR API KEY" with your tenor api key, which you can get from https://tenor.com/gifapi/documentation, create an account, create a new application in https://tenor.com/developer/keyregistration and copy the key
+    2. In /settings/config.json, edit the "INSERT TENOR API KEY" with your tenor api key
+         1. Go to https://tenor.com/gifapi/documentation
+         2. Create a new account
+         3. Create a new application in https://tenor.com/developer/keyregistration and copy the key
 
 
 # Running
