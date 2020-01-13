@@ -1,0 +1,5 @@
+{ 
+	"token": "INSERT DISCORD TOKEN", 
+	"musicFolder": "music_cache/", 
+	"defaultPrefix": "!"
+}
