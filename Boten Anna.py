@@ -67,7 +67,7 @@ def snapVolumeToSteps(volume, increase=True):
 	return volume_steps[new_index]
 def tenorGIF(searchTerm):
 	# set the apikey and limit
-	apikey = "INSERT API KEY HERE"
+	apikey = settings['tenor_key']
 	lmt = 20
 
 	# get the top 8 GIFs for the search term
