@@ -2,8 +2,8 @@
 A discord bot written in python
 
 
-# Installation
-* install python 3.8.1: https://www.python.org/downloads/release/python-381/
+# Installation (Windows)
+* install python 3.8.1: Go to https://www.python.org/downloads/release/python-381/ and download "Windows x86-64 executable installer"
 
 * Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
 
@@ -13,9 +13,7 @@ A discord bot written in python
 
 * `pip install pipenv`: Installs pipenv, a python environment which keeps all the dependencies which is good if you have multiple python projects
 
-* `pipenv shell`: Opens a new python environment
-
-* `pipenv install`: Install all dependencies
+* `pipenv install`: Install all dependencies needed for the bot to run
 
 * In /settings/config.json, edit the "INSERT DISCORD TOKEN" with your own discord token (https://discordapp.com/developers/applications/, create application and get the bot token on the "Bot" tab)
 
