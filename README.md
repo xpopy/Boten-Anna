@@ -50,15 +50,15 @@ A discord bot written in python
 
 
 # Running
-* Open up a terminal in the installation folder and type `pipenv run python "Boten Anna.py"`
-* Alternatively you can create a file called "Run.bat" and inside of it you paste:
+1. Open up a terminal in the installation folder and type `pipenv run python "Boten Anna.py"`
+2. Alternatively you can create a file called "Run.bat" and inside of it you paste:
 ```
 pipenv run python "Boten Anna.py"
 pause
 ```
 
 # Inviting
-* In order to invite your new bot to your own discord server, open up https://discordapp.com/developers/applications, select your bot, go to the OAuth2 tab, hit the "Bot" checkmarker and down below select the permissions:
+1. In order to invite your new bot to your own discord server, open up https://discordapp.com/developers/applications, select your bot, go to the OAuth2 tab, hit the "Bot" checkmarker and down below select the permissions:
   ```
   Send Messages
   Manage Messages
@@ -70,6 +70,6 @@ pause
   Speak
   ```
 
-* Then right above the permissions there's a long link, click on the copy button and paste it in your browser, voila!
-  You might want to save that link as that's the only way you can invite your bot to other servers (or you'll have to make a new link every time)
+2. Then right above the permissions there's a long link, click on the copy button and paste it in your browser, voila!
+   You might want to save that link as that's the only way you can invite your bot to other servers (or you'll have to make a new link every time)
 
