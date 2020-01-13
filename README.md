@@ -9,11 +9,9 @@ A discord bot written in python
 
 * Download the bot, either as a zip (unzip it where you want it) or clone it
 
-* Open up a command prompt in the new folder
+* Open up a command prompt or powershell in the new folder (shift rightclick the folder > open powershell window here)
 
-* pipenv is a python environment which keeps all the dependencies which is good if you have multiple python projects
-
-* Install pipenv: `pip install pipenv`
+* Install pipenv: `pip install pipenv`, pipenv is a python environment which keeps all the dependencies which is good if you have multiple python projects
 
 * Open a new python environment: `pipenv shell`
 
