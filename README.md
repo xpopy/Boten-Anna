@@ -27,6 +27,6 @@ A discord bot written in python
 * Open up a terminal in the installation folder and type `pipenv run python "Boten Anna.py"`
 * Alternatively you can create a file called "Run.bat" and inside of it you paste:
 ```
-pipenv run python index.py
+pipenv run python "Boten Anna.py"
 pause
 ```
