@@ -13,13 +13,16 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #pipenv install (package)
 #pipenv lock
 
-#TODO: create a "is_user_connected_to_voice" check so that commands like "skip" or "pause" or "stop"
-		#cant be used by people thats not connected
-		#rewrite join_voice_and_play 
-		
 #TODO: split up into modules (cogs?)
 
-#TODO: change limit text channel to limit music commands channel or something so its more clearer it's only for music commands
+
+
+#TODO: default playlist is empty string is weird
+#TODO: maybe place player and downloader in a try catch loop so that it doesn't crash when an issue happens
+#TODO: join is buggy if there's no song in playlist
+#TODO: Check if ffmpeg is installed in initialization
+
+#TODO: Write a short comment on what functions do
 #TODO: rewrite help as a dictionary with categories, commands, short description and a long description
 	#TODO: https://i.imgur.com/L2Z3IYo.png
 	#TODO: Move it to initialize so it doesn't have to create it every time we want to check help
@@ -41,8 +44,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #TODO: make use of types in args like func(ctx, arg1: int)
 
 """TODO: seek in a video?""" # can't, no api implemented for it
-
-
 
 def datetime_from_utc_to_local(utc_datetime):
 	now_timestamp = time.time()
@@ -149,15 +150,6 @@ def normalizeAudio(filename):
 		
 	os.remove(filename) 
 	return newfilename
-def is_dj(ctx):
-	#Checks if the user has the dj_role role
-	server = str(ctx.guild.id)
-	if ctx.author.guild_permissions.administrator:
-		return True
-	if 'dj_role' in serverSettings[server]:
-		djRole = get(ctx.guild.roles, id=serverSettings[server]['dj_role'])
-		return djRole in ctx.author.roles
-	return False
 def clampTitle(title):
 	maxLength = 40
 	if len(title) > maxLength:
@@ -295,12 +287,6 @@ def get_playlist_info_async(url):
 		urls.append(url)
 
 	return (clampTitle(playlist_name), playlist_url, urls)
-def is_connected(ctx):
-	if ctx.voice_client is None:
-		return False
-	if ctx.author.voice.channel != ctx.voice_client.channel:
-		return False
-	return True	
 def is_connected_player(mPlayer):
 	voice_client = get(mPlayer.bot.voice_clients, guild=mPlayer._guild)
 	return voice_client and voice_client.is_connected()
@@ -310,13 +296,6 @@ def RepresentsInt(s):
 		return True
 	except ValueError:
 		return False
-def is_accepted_voice_channel(ctx):
-	if not str(ctx.guild.id) in serverSettings:
-		return True
-	if not serverSettings[str(ctx.guild.id)]['acceptedVoiceChannels']:
-		return True
-	else:
-		return ctx.author.voice.channel.id in serverSettings[str(ctx.guild.id)]['acceptedVoiceChannels']
 def create_progressbar(timePaused, timeStarted, duration, is_paused):
 	if is_paused:
 		progress_time = round(timePaused)
@@ -394,14 +373,17 @@ def getQueueList(mPlayer, procDefault = False, prepareDefault = False):
 	if prepareDefault:
 		queueList += mPlayer.prepareQueue.default
 	return queueList
-def getQueuedAmount(mPlayer, default = True):
+def getQueuedAmount(mPlayer, procDefault = True, prepareDefault = False):
 	amount = 0
 
-	if default:
+	if procDefault:
 		amount += len(mPlayer.processedQueue)
-		amount += len(mPlayer.prepareQueue)
 	else:
 		amount += len(mPlayer.processedQueue.getQueue())
+	
+	if prepareDefault:
+		amount += len(mPlayer.prepareQueue)
+	else: 
 		amount += len(mPlayer.prepareQueue.getQueue())
 	return amount
 def getBoolSetting(guildID, setting):
@@ -411,7 +393,7 @@ def getBoolSetting(guildID, setting):
 		return True
 	else:
 		return serverSettings[str(guildID)][setting]
-def get_playlist_json_async(json_file, server):
+def get_playlist_json(json_file, server):
 	try:
 		data = json.load(json_file)
 		if not server in data:
@@ -449,25 +431,38 @@ def update_settings_json_async(server, field_to_update, new_value, add_to_list=T
 		json.dump(data, jsonFile)
 		jsonFile.truncate()
 		serverSettings = data
-
+def update_playlist_json_async(server, url, add = False):
+	global serverSettings
+	with open(playlist_location, 'r+') as jsonFile:
+		data = get_playlist_json(jsonFile, server)
+		
+		if len(url) == 0:
+			data[server] = []
+		elif add:
+			data[server].append(url)
+		else:
+			data[server].remove(url)
+		
+		json.dump(data, jsonFile)
+		jsonFile.truncate()
 async def get_playlist_info(url, loop=None):
 	loop = loop or asyncio.get_event_loop()
 	return await loop.run_in_executor(None, lambda: get_playlist_info_async(url))
 async def get_song_data(url, loop=None):
 	loop = loop or asyncio.get_event_loop()
 	return await loop.run_in_executor(None, lambda: get_song_data_async(url))
-async def get_playlist_json(json_file, server, loop=None):
-	loop = loop or asyncio.get_event_loop()
-	return await loop.run_in_executor(None, lambda: get_playlist_json_async(json_file, server))
 async def getDefaultPlaylist(guildID):
 	data = {}
 	server = str(guildID)
 	with open(playlist_location, 'r', encoding='utf-8') as json_file:
-		data = await get_playlist_json(json_file, server)
+		data = get_playlist_json(json_file, server)
 	return data[server]
 async def update_settings_json(server, field_to_update, new_value, add_to_list=True, clear_list=False, loop=None):
 	loop = loop or asyncio.get_event_loop()
 	await loop.run_in_executor(None, lambda: update_settings_json_async(server, field_to_update, new_value, add_to_list, clear_list))
+async def update_playlist_json(server, url, add = False, loop=None):
+	loop = loop or asyncio.get_event_loop()
+	await loop.run_in_executor(None, lambda: update_playlist_json_async(server, url, add))
 async def setVolume(guild, vc, newVolume):
 	mPlayer = get_player(guild)
 	mPlayer.volume = newVolume
@@ -476,29 +471,17 @@ async def setVolume(guild, vc, newVolume):
 	await update_settings_json(str(guild.id), 'volume', float(newVolume))
 async def join_voice_and_play(ctx):
 	"""returns True if we can play a song afterwards"""
-	if ctx.author.voice == None and ctx.voice_client == None:
-		# User is not in a channel
-		await ( await ctx.send('Join a voice channel before playing something')).delete(delay=7)
-		await ctx.message.delete(delay=7)
-		return False
-	if ctx.author.voice == None:
-		# User is not in a channel
-		await ctx.send('I\'m already playing in the voice channel `{}`, join me!'.format(ctx.voice_client.channel.name))
-		return False
-	elif ctx.voice_client == None:
+	if ctx.voice_client == None:
 		# Bot is not in a channel
-		if is_accepted_voice_channel(ctx):
-			await ctx.message.author.voice.channel.connect()
-			return True
-		else:
-			await ( await ctx.send(f"I'm not allowed to join your voice channel")).delete(delay=15)
-			return await ctx.message.delete(delay=15) 
+		await ctx.message.author.voice.channel.connect()
+		return True
+
 	elif ctx.author.voice.channel == ctx.voice_client.channel:
 		# Bot is in same channel
 		return True
 	else:
 		# Bot is in another channel
-		await ctx.send('I\'m already playing in the voice channel `{}`'.format(ctx.voice_client.channel.name))
+		await ctx.send('I\'m already playing in the voice channel `{}`, join me!'.format(ctx.voice_client.channel.name))
 		return False
 async def add_song(ctx, url, stream=False, play_next=False, play_now=False):
 	async with ctx.typing():
@@ -558,7 +541,7 @@ async def add_song(ctx, url, stream=False, play_next=False, play_now=False):
 				mPlayer.prepareQueue.play.append(songObj)
 				mPlayer.downloader.set()
 
-				embed = discord.Embed(title=title, url=url, description=f"Queued **#{getQueuedAmount(mPlayer, default = False)}**, `[{convert_seconds(duration)}]`")
+				embed = discord.Embed(title=title, url=url, description=f"Queued **#{getQueuedAmount(mPlayer, procDefault = False, prepareDefault = False)}**, `[{convert_seconds(duration)}]`")
 				embed.set_thumbnail(url=thumbnail)
 				await ctx.send(embed=embed)
 
@@ -573,20 +556,21 @@ async def add_song(ctx, url, stream=False, play_next=False, play_now=False):
 					embed = discord.Embed(title=title, url=url, description=f"`[{convert_seconds(duration)}]`")
 					embed.set_thumbnail(url=thumbnail)
 					await ctx.send(embed=embed)
-async def now_playing(guild, channel=None, preparing=False, dontSticky = False):
+async def now_playing(guild, channel=None, preparing=False, dontSticky = False, forceSticky = False):
 	mPlayer = get_player(guild)
 	currentPlayer = mPlayer.current
 	msg = mPlayer.current_np_message
 
 
 	if preparing:
-		if getQueuedAmount(mPlayer, default = True) > 0:
+		if getQueuedAmount(mPlayer, procDefault = True, prepareDefault = False) > 0:
 			nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = True)[0]
+			print(nextSong)
 			embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
 		else:
 			embed = discord.Embed(description="Preparing song...")
 
-		if msg:
+		if msg and not forceSticky:
 			await msg.edit(embed=embed)
 			await set_message_reactions(msg, [])
 		else:
@@ -598,14 +582,17 @@ async def now_playing(guild, channel=None, preparing=False, dontSticky = False):
 	if currentPlayer == None:
 		if guild.voice_client == None:
 			embed = discord.Embed(title="Player stopped")
-		elif getQueuedAmount(mPlayer, default = True) > 0:
-			nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = False)[0]
-			if mPlayer.update_np_downloading.is_set():
-				embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Downloading song...")
-			elif mPlayer.update_np_normalizing.is_set():
-				embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Normalizing song volume...")
+		elif getQueuedAmount(mPlayer, procDefault = True, prepareDefault = True) > 0:
+			if getQueuedAmount(mPlayer, procDefault = True, prepareDefault = False) > 0:
+				nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = False)[0]
+				if mPlayer.update_np_downloading.is_set():
+					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Downloading song...")
+				elif mPlayer.update_np_normalizing.is_set():
+					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Normalizing song volume...")
+				else:
+					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
 			else:
-				embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
+				embed = discord.Embed(description="Preparing song...")
 		else:
 			embed = discord.Embed(description="There's no song playing")
 		if msg:
@@ -618,7 +605,7 @@ async def now_playing(guild, channel=None, preparing=False, dontSticky = False):
 		return
 
 	sticky = getBoolSetting(str(guild.id), 'nowPlayingSticky')
-	if (dontSticky) or (not sticky) or (msg and msg.channel.last_message_id == msg.id):
+	if (not forceSticky) and ( (dontSticky) or (not sticky) or (msg and msg.channel.last_message_id == msg.id) ):
 		em =  msg.embeds[0].description
 		description = create_progressbar(mPlayer.timePaused,
 										 mPlayer.timeStarted,
@@ -665,6 +652,17 @@ async def not_connected_message(ctx):
 		return await ctx.send("I'm not connected to a voice channel.")
 	if ctx.author.voice.channel != ctx.voice_client.channel:
 		return await ctx.send(f"You have to be in **{ctx.voice_client.channel.name}** to do that")
+async def is_accepted_voice_channel(ctx):
+	if not str(ctx.guild.id) in serverSettings:
+		return True
+	if not serverSettings[str(ctx.guild.id)]['acceptedVoiceChannels']:
+		return True
+	else:
+		if ctx.author.voice.channel.id in serverSettings[str(ctx.guild.id)]['acceptedVoiceChannels']:
+			return True
+		else:
+			await ctx.send(f"I'm not allowed to join your voice channel")
+			return False
 async def is_accepted_text_channel(ctx):
 	if not str(ctx.guild.id) in serverSettings:
 		return True
@@ -672,7 +670,42 @@ async def is_accepted_text_channel(ctx):
 		return True
 	else:
 		return ctx.channel.id in serverSettings[str(ctx.guild.id)]['acceptedTextChannels']
+async def is_bot_connected(ctx):
+	''' Checks if the bot is connected to a voice channel ''' 
+	if ctx.voice_client is None:
+		await ctx.send("I'm not connected to a voice channel.")
+		return False
+	else:
+		return True
+async def is_user_connected_to_bot_channel(ctx):
+	''' Checks if a user is connecter to the same voice channel as the bot is '''
+	if ctx.author.voice is not None:
+		if ctx.author.voice.channel == ctx.voice_client.channel:
+			return True
+	await ctx.send(f"You have to be in `🔊 {ctx.voice_client.channel.name}` to do that")
+	return False	
+async def is_user_connected(ctx):
+	''' Checks if the user is connected to a voice chanel '''
+	if ctx.author.voice is not None:
+		return True
+	await ctx.send('You have to join a voice channel to do that')
+	return False	
+async def is_dj(ctx):
+	'''Checks if the user has the dj_role role'''
+	server = str(ctx.guild.id)
+	if ctx.author.guild_permissions.administrator:
+		return True
+	if 'dj_role' in serverSettings[server]:
+		djRole = get(ctx.guild.roles, id=serverSettings[server]['dj_role'])
+		if djRole in ctx.author.roles:
+			return True
+		else:
+			await ctx.send("You don't have the required permissions to do that")
+			return False
+	await ctx.send("You don't have the required permissions to do that")
+	return False
 async def bookList(channel, mPlayer, func, playList, itemsPerPage=5):
+	''' Generates a list with pages that you can flip back and forth '''
 	pageIndex = 1
 	listIndex = 0
 	queueLength = len(playList)
@@ -716,6 +749,7 @@ async def bookList(channel, mPlayer, func, playList, itemsPerPage=5):
 				embed.set_footer(text=f"Page {pageIndex}/{pages}")
 				await message.edit(embed=embed)
 async def determine_prefix(bot, message):
+	''' Returns the prefix for the server that the message was sent in '''
 	guild = message.guild
 	#Only allow custom prefixs in guild
 	if guild:
@@ -727,6 +761,7 @@ async def determine_prefix(bot, message):
 	else:
 		return settings['defaultPrefix']
 async def helpFunction(ctx, helpCommand=None):
+	''' Generates a help message, if a helpCommand is given then it generates a help message specific for that command '''
 	funCommandList = ["8ball", "kiss", "hug", "poke",
 					"feed", "cuddle", "slap", "pat", "tickle", 
 					"smug", "lick", "highfive", "uwu", "fact", 
@@ -742,8 +777,8 @@ async def helpFunction(ctx, helpCommand=None):
 					"clear",
 					"setdj",
 					"prefix",
-					"limittc",
-					"limitvc",
+					"musictc",
+					"musicvc",
 					'prepare_default_playlist']
 
 	if not helpCommand:
@@ -767,7 +802,7 @@ async def helpFunction(ctx, helpCommand=None):
 	else:
 		#helpCommand might be a list of aliases, check which one is the correct command and assign that
 		if isinstance(helpCommand, list):
-			for alias in ctx.command.aliases + [ctx.command.name]:
+			for alias in helpCommand:
 				if alias in funCommandList + commandList + djcommandList:
 					helpCommand = alias
 					break
@@ -931,24 +966,24 @@ async def helpFunction(ctx, helpCommand=None):
 			description += f"Use `{prefix}annaprefix` if another bot is using the same prefix as me\n"
 			description += f"Encapsulate the new prefix with quote marks if you want the prefix to end with a space like this `\"! \"` \n"
 
-		elif helpCommand == "limittc":
-			commandSyntax += "limittc (clear | add (#channel | current) | remove (#channel | current))"
-			description += "Limits the bot to only read messages from specific textchannels\n\n"
+		elif helpCommand == "musictc":
+			commandSyntax += "musictc (clear | add (#channel | current) | remove (#channel | current))"
+			description += "Limits the bot to only read music commands from specific textchannels\n\n"
 			description += "If there's no channels added then the bot will listen to all channels\n"
 			description += "Run without parameters to show the current channels\n\n"
-			description += f"**Example:** `{prefix}limittc add current` adds the textchannel you wrote in to the channels the bot will read from\n"
-			description += f"**Example:** `{prefix}limittc remove #channel` removes the channel you tagged\n"
-			description += f"**Example:** `{prefix}limittc clear` will make the bot read from all channels again"
+			description += f"**Example:** `{prefix}musictc add current` adds the textchannel you wrote in to the channels the bot will read from\n"
+			description += f"**Example:** `{prefix}musictc remove #channel` removes the channel you tagged\n"
+			description += f"**Example:** `{prefix}musictc clear` will make the bot read from all channels again"
 		
-		elif helpCommand == "limitvc":
-			commandSyntax += "limitvc (clear | add (ID | current) | remove (ID | current))"
+		elif helpCommand == "musicvc":
+			commandSyntax += "musicvc (clear | add (ID | current) | remove (ID | current))"
 			description += "Limits the bot to only join and play music in specific voice channels\n\n"
 			description += "If there's no channels added then the bot can join all channels\n"
 			description += "Run without parameters to show the current channels\n"
 			description += "To get the ID of a voice channel, enable developer mode in discord settings and then rightclick on a voice channel and copy its ID\n\n"
-			description += f"**Example:** `{prefix}limitvc add current` adds the voicechannel you're currently in \n"
-			description += f"**Example:** `{prefix}limitvc remove 653341521223090183` removes the channel with the ID \"653341521223090183\"\n"
-			description += f"**Example:** `{prefix}limitvc clear` will make the bot able to join all channels again"
+			description += f"**Example:** `{prefix}musicvc add current` adds the voicechannel you're currently in \n"
+			description += f"**Example:** `{prefix}musicvc remove 653341521223090183` removes the channel with the ID \"653341521223090183\"\n"
+			description += f"**Example:** `{prefix}musicvc clear` will make the bot able to join all channels again"
 		elif helpCommand == "prepare_default_playlist":
 			commandSyntax += "prepare_default_playlist"
 			description += "Downloads all songs that are in the default playlist and prepares them so that next time you play it will be instant"
@@ -958,6 +993,7 @@ async def helpFunction(ctx, helpCommand=None):
 		embed.set_footer(text="Syntax: (x | y): use either x or y, (x): x is optional")
 		await ctx.send(embed=embed)	
 async def handleNPReactions(reaction, user, mPlayer):
+	''' Handles the Now Playing message reactions '''
 	vc = reaction.message.guild.voice_client
 	await reaction.remove(user)
 
@@ -1057,6 +1093,34 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		mPlayer.update_np_normalizing.clear()
 
 		return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options))
+
+class Current_or_id_channel(commands.Converter):
+	''' Argument type converter, makes sure the argument is either "current", a channel ID or a channel mention '''
+	__slots__ = ('is_voice')
+
+	def __init__(self, is_voice):
+		self.is_voice = is_voice
+
+	async def convert(self, ctx, argument):
+		if argument == "current":
+			if self.is_voice:
+				if ctx.author.voice is not None:
+					channel = ctx.author.voice.channel
+				else:
+					raise commands.errors.BadArgument("You have to be in a voice channel to use that")
+			else:
+				channel = ctx.channel
+		elif len(ctx.message.channel_mentions) > 0:
+			channel = ctx.message.channel_mentions[0]
+		else:
+			try:
+				channel = ctx.guild.get_channel(int(argument))
+				if not channel:
+					raise commands.errors.BadArgument("Can't find a channel with that ID")
+			except:
+				raise commands.errors.BadArgument("Bad argument, either use `current` for the current channel, tag a channel like `#general`"
+						+ " or use its ID (Settings > Appearance > Enable Developer Mode, then rightclick the channel and copy its ID)")
+		return channel
 
 @dataclass
 class Song:
@@ -1170,7 +1234,7 @@ class MusicPlayer:
 			else:
 				await self.stop_update_np.wait()
 				await now_playing(self._guild)
-			if self.current == None and getQueuedAmount(self, default = True) == 0:
+			if self.current == None and getQueuedAmount(self, procDefault = True, prepareDefault = True) == 0:
 				self.stop_update_np.clear()
 	async def downloader_loop(self):
 		await self.bot.wait_until_ready()
@@ -1526,17 +1590,6 @@ if __name__ == "__main__":
 		if mPlayer.current_np_message and mPlayer.current_np_message.id == reaction.message.id:
 			await handleNPReactions(reaction, user, mPlayer)
 
-	"""
-	@bot.event
-	async def on_reaction_remove(reaction, user):	
-		if user == bot.user or reaction.message.author != bot.user:
-			return
-			
-		mPlayer = get_player(reaction.message.guild)
-		if mPlayer.current_np_message and mPlayer.current_np_message.id == reaction.message.id:
-			await handleNPReactions(reaction, user, mPlayer)
-	"""
-
 	@bot.event
 	async def on_voice_state_update(member, before, after):
 		mPlayer = get_player(member.guild)
@@ -1549,14 +1602,17 @@ if __name__ == "__main__":
 	@bot.event
 	async def on_command_error(ctx, error):
 		if isinstance(error, commands.errors.CheckFailure):
-			await ctx.send("You don't have the required permissions to do that")
+			return
 
 		elif isinstance(error, commands.errors.BadArgument):
-			print("bad argument")
 			await ctx.send(error)
 
 		elif isinstance(error, commands.errors.MissingRequiredArgument):
-			await helpFunction(ctx, helpCommand = ctx.command.aliases + [ctx.command.name])
+			if ctx.command.parent is not None:
+				await helpFunction(ctx, helpCommand = ctx.command.parent.aliases + [ctx.command.parent.name] )
+			else:
+				await helpFunction(ctx, helpCommand = ctx.command.aliases + [ctx.command.name] )
+
 
 		elif isinstance(error, discord.errors.Forbidden):
 			print("Missing permissions")
@@ -1592,6 +1648,8 @@ if __name__ == "__main__":
 		return True
 
 
+
+
 #####################################
 #									#
 #	 ######## ##     ## ##    ##	#
@@ -1606,7 +1664,7 @@ if __name__ == "__main__":
 
 #Fun commands:
 
-	@bot.command(aliases=['8ball'])
+	@bot.command(aliases=['8ball', '8'])
 	async def question8ball(ctx, *, question: str):
 
 		if question[-1] != "?":
@@ -1734,18 +1792,6 @@ if __name__ == "__main__":
 		await ctx.send(embed=embed)
 
 	@bot.command()
-	async def smug(ctx):
-
-		url = requestGet(nekoApiUrl + "img/smug").json()['url']
-
-		text = f"**{ctx.author.mention} is being smug**"
-		embed = discord.Embed(description = text)
-		embed.set_image(url=url)
-		embed.set_footer(text="Made with the help of nekos.life")
-
-		await ctx.send(embed=embed)
-
-	@bot.command()
 	async def lick(ctx, *, user: discord.Member):
 
 		url = tenorGIF("anime lick")
@@ -1769,7 +1815,7 @@ if __name__ == "__main__":
 			else:
 				text = f"**{ctx.author.mention} high fives {user.mention}**"
 		else:
-			#This command will be run twice, so the second time we should ignore the command and let the first command finish the wait_for
+			#This command will be run twice, depending on the content we may want to let the first command do the work
 			messages = await ctx.channel.history(limit=5).flatten()
 			for i, message in enumerate(messages):
 				if message.author == bot.user and message.embeds and  "high fives" in message.embeds[0].description:
@@ -1802,7 +1848,6 @@ if __name__ == "__main__":
 					else:
 						text = f"**{message.author.mention} high fives {ctx.author.mention}**"
 						
-		
 		#High five text is done, time to get the gif and post it
 		url = tenorGIF("anime highfive")
 		
@@ -1832,6 +1877,18 @@ if __name__ == "__main__":
 		uwuFaces = ["^~^", "UwU", "OwO", "oWo", "OvO", "UvU", "*~*", ":3", "=3", "<(^V^<)"]
 
 		await ctx.send(content=text + " " + randElement(uwuFaces))
+
+	@bot.command()
+	async def smug(ctx):
+
+		url = requestGet(nekoApiUrl + "img/smug").json()['url']
+
+		text = f"**{ctx.author.mention} is being smug**"
+		embed = discord.Embed(description = text)
+		embed.set_image(url=url)
+		embed.set_footer(text="Made with the help of nekos.life")
+
+		await ctx.send(embed=embed)
 
 	@bot.command()
 	async def fact(ctx):
@@ -2043,42 +2100,32 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['join', 'j'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_voice_channel)
 	async def join_(ctx):
 		mPlayer = get_player(ctx.guild)
-		if ctx.author.voice == None:
-			# User is not in a channel
-			await ( await ctx.send('Please join a voice channel before summoning me')).delete(delay=10)
-			await ctx.message.delete(delay=10)
-		elif ctx.voice_client == None:
+		if ctx.voice_client == None:
 			# Bot is not in a channel
-			if is_accepted_voice_channel(ctx):
-				print("joins voice")
-				await ctx.message.author.voice.channel.connect()
-				mPlayer.downloader.set()
+			await ctx.message.author.voice.channel.connect()
+			mPlayer.downloader.set()
 
-				await asyncio.sleep(2)
+			await asyncio.sleep(1)
 
-				val = getBoolSetting(str(ctx.guild.id), 'nowPlayingAuto')
-				if val:
-					await now_playing(ctx.guild, ctx.channel, preparing=True)
+			val = getBoolSetting(str(ctx.guild.id), 'nowPlayingAuto')
+			if val:
+				await now_playing(ctx.guild, ctx.channel, preparing=True, forceSticky=True)
 
-			else:
-				await ( await ctx.send(f"I'm not allowed to join your voice channel")).delete(delay=15)
-				return await ctx.message.delete(delay=15)
 		elif ctx.message.author.voice.channel == ctx.voice_client.channel:
 			# Bot is in same channel
-			await ( await ctx.send('I\'m already in your channel dummy')).delete(delay=10)
-			await ctx.message.delete(delay=10)
+			await ctx.send('I\'m already in your channel dummy')
 		else:
 			# Bot is in another channel
-			if is_accepted_voice_channel(ctx):
-				await ctx.voice_client.move_to(ctx.message.author.voice.channel)
-			else:
-				await ( await ctx.send(f"I'm not allowed to join your voice channel")).delete(delay=15)
-				return await ctx.message.delete(delay=15) 
+			await ctx.voice_client.move_to(ctx.message.author.voice.channel)
 
 	@bot.command(aliases=['play', 'p'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_voice_channel)
 	async def play_(ctx,  *args):
 		if len(args) == 0:
 			defaultPlaylist = await getDefaultPlaylist(ctx.guild.id)
@@ -2096,16 +2143,20 @@ if __name__ == "__main__":
 				await asyncio.sleep(1)
 				val = getBoolSetting(str(ctx.guild.id), 'nowPlayingAuto')
 				if val:
-					await now_playing(ctx.guild, ctx.channel, preparing=True)
+					await now_playing(ctx.guild, ctx.channel, preparing=True, forceSticky=True)
 
 	@bot.command(aliases=['playnext', 'pnext', 'pn'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_voice_channel)
 	async def playnext_(ctx, *, url):
 		if(await join_voice_and_play(ctx)):
 			await add_song(ctx, url, play_next=True, stream=False)
 
 	@bot.command(aliases=['playnow', 'pnow'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_voice_channel)
 	@commands.check(is_dj)
 	async def playnow_(ctx, *, url):
 		if(await join_voice_and_play(ctx)):
@@ -2113,150 +2164,108 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['stream', 'playstream'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_voice_channel)
 	async def stream_(ctx, *, url):
 		if(await join_voice_and_play(ctx)):
 			await add_song(ctx, url, stream=True)
 
-	@bot.command(aliases=['playlist', 'pl'])
+
+	@bot.group(aliases=['playlist', 'pl'])
 	@commands.check(is_accepted_text_channel)
 	@commands.check(is_dj)
-	async def playlist_(ctx, *args):
-		async with ctx.typing():
-
+	async def playlist_(ctx):
+		if ctx.invoked_subcommand is None:
 			mPlayer = get_player(ctx.guild)
-			searchOrUrl = " ".join(args[1:])
+			defaultPlaylist = await getDefaultPlaylist(ctx.guild.id)
+			await bookList(ctx.channel, mPlayer, create_playlist_string, defaultPlaylist, itemsPerPage=10)
+	
+	@playlist_.command(aliases=['clear'])
+	async def clear_playlist(ctx):
+		server = str(ctx.guild.id)
+		mPlayer = get_player(ctx.guild)
+		await update_playlist_json(server, [])
+		mPlayer.prepareQueue.default = []
+		await ctx.send(f"Default playlist cleared.")
 
-			if len(args) == 0:
-				defaultPlaylist = await getDefaultPlaylist(ctx.guild.id)
-				await bookList(ctx.channel, mPlayer, create_playlist_string, defaultPlaylist, itemsPerPage=10)
-				return
+	@playlist_.command(aliases=['add'])
+	async def add_to_playlist(ctx, *args):
+		server = str(ctx.guild.id)
+		mPlayer = get_player(ctx.guild)
+		searchOrUrl = " ".join(args)
+		if isPlaylist(searchOrUrl): #It's a playlist
+			title, url, songs = await get_playlist_info(searchOrUrl)
 
-			elif len(args) == 1:
-				if args[0] == "clear":
-					with open(playlist_location, 'r+') as json_file:
-						server = str(ctx.guild.id)
-						data = await get_playlist_json(json_file, server)
-						data[server] = []
-						json.dump(data, json_file)
-						json_file.truncate()
+			data = await getDefaultPlaylist(server)
+			if url in data:
+				return await ctx.send(f"That playlist is already added")
 
-					mPlayer.prepareQueue.default = []
+			await update_playlist_json(server, url, add = True)
+			mPlayer.prepareQueue.default = mPlayer.prepareQueue.default + songs
+			shuffle(mPlayer.prepareQueue.default)
+			
+			embed = discord.Embed(title="Playlist: " + title, url=url, description=f"Added playlist with {len(songs)} songs")
+			await ctx.send(embed=embed)
+		else: #It's either a bunch of words or an url
+			try:
+				title, url, thumbnail, _ = await get_song_data(searchOrUrl)
+			except:
+				await ctx.send(f"Wrong arguments, check `{await determine_prefix(bot, ctx.message)}help playlist`")
+			
+			data = await getDefaultPlaylist(server)
+			if url in data:
+				return await ctx.send(f"That song already exists in the playlist")
+		
+			await update_playlist_json(server, url, add = True)
+			mPlayer.prepareQueue.default.append(url)
+			shuffle(mPlayer.prepareQueue.default)
 
-					return await ctx.send(f"Default playlist cleared.")
-				else:
-					await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-					return await ctx.message.delete(delay=15)
+			embed = discord.Embed(title=title, url=url, description=f"have been added to the playlist")
+			embed.set_thumbnail(url=thumbnail)
+			await ctx.send(embed=embed)
 
-			if args[0] == "add":
-				if isPlaylist(searchOrUrl):
-					#It's a playlist
+	@playlist_.command(aliases=['remove'])
+	async def remove_from_playlist(ctx, *args):
+		server = str(ctx.guild.id)
+		mPlayer = get_player(ctx.guild)
+		searchOrUrl = " ".join(args)
+		if isPlaylist(searchOrUrl):
+			title, url, songs = await get_playlist_info(searchOrUrl)
 
-					if searchOrUrl in mPlayer.prepareQueue.default:
-						#already exists in the playlist
-						await ( await ctx.send(f"That youtube playlist is already added")).delete(delay=15)
-						return await ctx.message.delete(delay=15)
+			data = await getDefaultPlaylist(server)
+			if not url in data:
+				return await ctx.send(f"That youtube playlist doesn't exist in the playlist")
 
-					title, url, songs = await get_playlist_info(searchOrUrl)
+			await update_playlist_json(server, url, add = False)
+			for song in songs:
+				if song in mPlayer.prepareQueue.default:
+					mPlayer.prepareQueue.default.remove(song)
 
-					server = str(ctx.guild.id)
-					with open(playlist_location, 'r+') as json_file:
-						data = await get_playlist_json(json_file, server)
-						data[server].append(searchOrUrl)
-						json.dump(data, json_file)
-						json_file.truncate()
+			embed = discord.Embed(title="Playlist: " + title, url=url, description=f"Removed playlist with {len(songs)} songs")
+			await ctx.send(embed=embed)
+		else:
+			try:
+				title, url, thumbnail, _ = await get_song_data(searchOrUrl)
+			except:
+				await ctx.send(f"Wrong arguments, check `{await determine_prefix(bot, ctx.message)}help playlist`")
 
-					mPlayer.prepareQueue.default = mPlayer.prepareQueue.default + songs
-					shuffle(mPlayer.prepareQueue.default)
-					embed = discord.Embed(title="Playlist: " + title, url=url, description=f"Added playlist with {len(songs)} songs")
-					await ctx.send(embed=embed)
-				else:
-					#It's either a bunch of words or a song
-					try:
-						title, url, thumbnail, _ = await get_song_data(searchOrUrl)
-					except:
-						await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-						return await ctx.message.delete(delay=15)
-					else:
-						if not title:
-							return await ctx.send("I found a playlist, which I don't support playing. Please be more specific about the song you want to play")
-						server = str(ctx.guild.id)
-						if url in mPlayer.prepareQueue.default:
-							#already exists in the playlist
-							await ( await ctx.send(f"That song already exists in the playlist")).delete(delay=15)
-							return await ctx.message.delete(delay=15)
+			data = await getDefaultPlaylist(server)
+			if not url in data:
+				return await ctx.send(f"That song doesn't exist in the playlist")
+				
+			await update_playlist_json(server, url, add = False)
+			mPlayer.prepareQueue.default.remove(url)
 
-						with open(playlist_location, 'r+') as json_file:
-							data = await get_playlist_json(json_file, server)
-							data[server].append(url)
-							json.dump(data, json_file)
-							json_file.truncate()
+			embed = discord.Embed(title=title, url=url, description=f"have been removed from the playlist")
+			embed.set_thumbnail(url=thumbnail)
+			await ctx.send(embed=embed)
 
-						mPlayer.prepareQueue.default.append(url)
-
-						embed = discord.Embed(title=title, url=url, description=f"have been added to the playlist")
-						embed.set_thumbnail(url=thumbnail)
-						await ctx.send(embed=embed)
-						return
-
-			elif args[0] == "remove":
-				if isPlaylist(searchOrUrl):
-
-					if not searchOrUrl in mPlayer.prepareQueue.default:
-						# doesn't exist in playlist
-						await ( await ctx.send(f"That song doesn't exist in the playlist")).delete(delay=15)
-						return await ctx.message.delete(delay=15)
-
-					title, url, songs = await get_playlist_info(searchOrUrl)
-
-					server = str(ctx.guild.id)
-					with open(playlist_location, 'r+') as json_file:
-						data = await get_playlist_json(json_file, server)
-						data[server].remove(searchOrUrl)
-						json.dump(data, json_file)
-						json_file.truncate()
-
-					for song in songs:
-						if song in mPlayer.prepareQueue.default:
-							mPlayer.prepareQueue.default.remove(song)
-
-					embed = discord.Embed(title="Playlist: " + title, url=url, description=f"Removed playlist with {len(songs)} songs")
-					await ctx.send(embed=embed)
-
-				else:
-					try:
-						title, url, thumbnail, _ = await get_song_data(searchOrUrl)
-					except:
-						await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-						return await ctx.message.delete(delay=15)
-					else:
-						if not title:
-							return await ctx.send("I found a playlist, which I don't support. Please be more specific about the song you want to play")
-						with open(playlist_location, 'r+') as json_file:
-							server = str(ctx.guild.id)
-							data = await get_playlist_json(json_file, server)
-
-							if not url in data[server]:
-								#already doesn't exist in playlist
-								await ( await ctx.send(f"That song doesn't exist in the playlist")).delete(delay=15)
-								return await ctx.message.delete(delay=15)
-							
-							data[server].remove(url)
-							json.dump(data, json_file)
-							json_file.truncate()
-							
-						mPlayer.prepareQueue.default.remove(url)
-
-						embed = discord.Embed(title=title, url=url, description=f"have been removed from the playlist")
-						embed.set_thumbnail(url=thumbnail)
-						return await ctx.send(embed=embed)
-			else:
-				await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-				return await ctx.message.delete(delay=15)
 
 	@bot.command(aliases=['volume', 'vol', 'v'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	async def volume_(ctx, *args):
-
 		mPlayer = get_player(ctx.guild)
 
 		if len(args) == 1:
@@ -2279,11 +2288,10 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['shuffle', 'random', 'randomize'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	@commands.check(is_dj)
 	async def shuffle_(ctx):
-		if not is_connected(ctx):
-			return await not_connected_message(ctx)
-
 		mPlayer = get_player(ctx.guild)
 		mPlayer.processedQueue.default = []
 
@@ -2301,52 +2309,39 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['pause'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	async def pause_(ctx):
-		if not is_connected(ctx):
-			return await not_connected_message(ctx)
-
 		mPlayer = get_player(ctx.guild)
+		if ctx.voice_client.is_paused():
+			await ( await ctx.send("I'm already paused")).delete(delay=10)
+			return await ctx.message.delete(delay=10)
 
-		if ctx.voice_client != None:
-			if ctx.voice_client.is_paused():
-				await ( await ctx.send("I'm already paused")).delete(delay=10)
-				return await ctx.message.delete(delay=10)
-
-			ctx.voice_client.pause()
-			mPlayer.timePaused = time.time() - mPlayer.timeStarted
-			mPlayer.update_np.set()
-			await ctx.message.add_reaction("👌")
-		else: 
-			await ( await ctx.send("I'm not in any voice channels")).delete(delay=10)
-			await ctx.message.delete(delay=10)
+		ctx.voice_client.pause()
+		mPlayer.timePaused = time.time() - mPlayer.timeStarted
+		mPlayer.update_np.set()
+		await ctx.message.add_reaction("👌")
 
 	@bot.command(aliases=['resume', 'continue'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	async def resume_(ctx):
-		if not is_connected(ctx):
-			return await not_connected_message(ctx)
-
 		mPlayer = get_player(ctx.guild)
+		if not ctx.voice_client.is_paused():
+			await ( await ctx.send("I'm already playing")).delete(delay=10)
+			return await ctx.message.delete(delay=10)
 
-		if ctx.voice_client != None:
-			if not ctx.voice_client.is_paused():
-				await ( await ctx.send("I'm already playing")).delete(delay=10)
-				return await ctx.message.delete(delay=10)
-
-			ctx.voice_client.resume()
-			mPlayer.timeStarted = time.time() - mPlayer.timePaused
-			mPlayer.update_np.set()
-			await ctx.message.add_reaction("👌")
-		else: 
-			await ( await ctx.send("I'm not in any voice channels")).delete(delay=10)
-			await ctx.message.delete(delay=10)
+		ctx.voice_client.resume()
+		mPlayer.timeStarted = time.time() - mPlayer.timePaused
+		mPlayer.update_np.set()
+		await ctx.message.add_reaction("👌")
 
 	@bot.command(aliases=['skip', 's'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	async def skip_(ctx):
-		if not is_connected(ctx):
-			return await not_connected_message(ctx)
-
 		vc = ctx.voice_client
 		if not vc.is_playing() and not vc.is_paused():
 			await ( await ctx.send("There's no song playing")).delete(delay=10)
@@ -2358,10 +2353,9 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['remove', 'r'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	async def remove_(ctx, indexToRemove):
-		if not is_connected(ctx):
-			return await not_connected_message(ctx)
-
 		mPlayer = get_player(ctx.guild)
 		
 		try: 
@@ -2399,11 +2393,10 @@ if __name__ == "__main__":
 		
 	@bot.command(aliases=['clear'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	@commands.check(is_dj)
 	async def clear_(ctx):
-		if not is_connected(ctx):
-			return await not_connected_message(ctx)
-		
 		mPlayer = get_player(ctx.guild)
 
 		mPlayer.prepareQueue.playnow = []
@@ -2415,10 +2408,8 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['queue', 'q'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
 	async def queue_(ctx, *args):
-		if ctx.voice_client is None:
-			return await ctx.send("I'm not connected to a voice channel.")
-
 		mPlayer = get_player(ctx.guild)
 		queueList = getQueueList(mPlayer, procDefault = False)
 
@@ -2432,14 +2423,13 @@ if __name__ == "__main__":
 
 		await bookList(ctx.channel, mPlayer, create_queue_string, queueList)
 
+
 	@bot.group(aliases=['nowplaying', 'np', 'current'])
 	@commands.check(is_accepted_text_channel)
 	async def nowplaying_(ctx):
 		if ctx.invoked_subcommand is None:
-			if ctx.voice_client is None:
-				return await ctx.send("I'm not connected to a voice channel.")
-
-			await now_playing(ctx.guild, ctx.channel)
+			if await is_bot_connected(ctx):
+				await now_playing(ctx.guild, ctx.channel)
 
 	@nowplaying_.command()
 	@commands.check(is_dj)
@@ -2471,7 +2461,8 @@ if __name__ == "__main__":
 		await update_settings_json(server, setting, (not current))
 		return await ctx.send(f"Toggled Now Playing automatically send to `{not current}`")
 
-	@bot.group(aliases=['setdj'])
+
+	@bot.command(aliases=['setdj'])
 	@commands.has_permissions(manage_roles=True)
 	async def setdj_(ctx, *args):
 		if len(args) == 0:
@@ -2502,27 +2493,24 @@ if __name__ == "__main__":
 
 	@bot.command(aliases=['leave', 'disconnect', 'stop'])
 	@commands.check(is_accepted_text_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_user_connected_to_bot_channel)
 	@commands.check(is_dj)
 	async def leave_(ctx):
-		if ctx.voice_client != None:
-			mPlayer = get_player(ctx.guild)
-			mPlayer.stop_player = True
-			mPlayer._guild.voice_client.stop()
-		else: 
-			await ( await ctx.send("I'm not in any voice channels")).delete(delay=10)
-			await ctx.message.delete(delay=10)
+		mPlayer = get_player(ctx.guild)
+		mPlayer.stop_player = True
+		mPlayer._guild.voice_client.stop()
 
-	@bot.command(aliases=['limittc'])
+
+	@bot.group(aliases=['musictc'])
 	@commands.check(is_dj)
-	async def limittc_(ctx, *args):
+	async def musictc_(ctx):
 		server = str(ctx.guild.id)
 		if not server in serverSettings:
 			serverSettings[server] = {}
 			serverSettings[server]['acceptedTextChannels'] = []
-
-		accTC = serverSettings[server]['acceptedTextChannels']
-
-		if len(args) == 0:
+		if ctx.invoked_subcommand is None:
+			accTC = serverSettings[server]['acceptedTextChannels']
 			if len(accTC) == 0:
 				return await ctx.send(f"I'm currently reading all text channels for commands, you can limit me to specific channels using {await determine_prefix(bot, ctx.message)}limittc add #channel_name")
 			else:
@@ -2533,114 +2521,89 @@ if __name__ == "__main__":
 						channelText += ", "
 				await ctx.send(f"These are the channels I'm currently watching: {channelText}")
 
-		elif len(args) == 1:
-			if args[0] == "clear":
-				await update_settings_json(server, 'acceptedTextChannels', None, clear_list=True)
-				await ctx.send(f"I'm now reading commands from all text channels")
-			else:
-				await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-				return await ctx.message.delete(delay=15)
+	@musictc_.command(aliases=['clear'])
+	async def clear_tc(ctx):
+		server = str(ctx.guild.id)
+		await update_settings_json(server, 'acceptedTextChannels', None, clear_list=True)
+		await ctx.send(f"I'm now reading commands from all text channels")
 
-		elif len(args) == 2:
-			try:
-				if args[1] == "current":
-					channel = ctx.channel
-				else:
-					channel = ctx.guild.get_channel(int(reSearch(r'\d+', args[1]).group()))
-				if channel in ctx.guild.text_channels:
-					if args[0] == "add":
-
-						await update_settings_json(server, 'acceptedTextChannels', channel.id, add_to_list=True)
-						await ctx.send(f"I've added {channel.mention} to the allowed text channels")
-					elif args[0] == "remove" or args[0] == "delete":
-						if len(accTC) == 0:
-							return await ctx.send(f"The allowed text channels list is currently empty, I'm listening to all text channels")
-						if channel.id in accTC:
-							await update_settings_json(server, 'acceptedTextChannels', channel.id, add_to_list=False)
-							await ctx.send(f"I've removed {channel.mention} from the allowed text channels")
-						else:
-							await ctx.send(f"That channel is not an allowed text channel")
-					else:
-						await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-						return await ctx.message.delete(delay=15)
-				else:
-					await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-					return await ctx.message.delete(delay=15)
-			except:
-				await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-				return await ctx.message.delete(delay=15)
+	@musictc_.command(aliases=['add'])
+	async def add_tc(ctx, channel: Current_or_id_channel(False)):
+		server = str(ctx.guild.id)
+		accTC = serverSettings[server]['acceptedTextChannels']
+		if channel.id in accTC:
+			await ctx.send(f"The channel {channel.mention} is already one of the allowed text channels")
 		else:
-			#idk what it is, errrooooor
-			await ( await ctx.send(f"Too many arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-			return await ctx.message.delete(delay=15)
+			await update_settings_json(server, 'acceptedTextChannels', channel.id, add_to_list=True)
+			await ctx.send(f"I've added {channel.mention} to the allowed text channels")
 
-	@bot.command(aliases=['limitvc'])
+	@musictc_.command(aliases=['remove'])
+	async def remove_tc(ctx, channel: Current_or_id_channel(False)):
+		server = str(ctx.guild.id)
+		if not server in serverSettings:
+			serverSettings[server] = {}
+			serverSettings[server]['acceptedTextChannels'] = []
+
+		accTC = serverSettings[server]['acceptedTextChannels']
+
+		if len(accTC) == 0:
+			return await ctx.send(f"The allowed text channels list is currently empty, I'm listening to all text channels")
+		if channel.id in accTC:
+			await update_settings_json(server, 'acceptedTextChannels', channel.id, add_to_list=False)
+			await ctx.send(f"I've removed {channel.mention} from the allowed text channels")
+		else:
+			await ctx.send(f"That channel is not an allowed text channel")
+
+
+	@bot.group(aliases=['musicvc'])
 	@commands.check(is_dj)
-	async def limitvc_(ctx, *args):
+	async def musicvc_(ctx):
 		server = str(ctx.guild.id)
 		if not server in serverSettings:
 			serverSettings[server] = {}
 			serverSettings[server]['acceptedVoiceChannels'] = []
 
-		accVC = serverSettings[server]['acceptedVoiceChannels']
-		
-		if len(args) == 0:
+		if ctx.invoked_subcommand is None:
+			accVC = serverSettings[server]['acceptedVoiceChannels']
 			if len(accVC) == 0:
 				return await ctx.send(f"I can currently join any voice channel, you can limit me to specific channels using {await determine_prefix(bot, ctx.message)}limitvc add channelID")
 			else:
 				channelText = ""
+				print(accVC)
 				for index, channelID in enumerate(accVC):
 					channelText += ctx.guild.get_channel(channelID).mention
 					if index != len(accVC) - 1:
 						channelText += ", "
 				await ctx.send(f"These are the channels I can currently join: {channelText}")
 
-		elif len(args) == 1:
-			if args[0] == "clear":
-				await update_settings_json(server, 'acceptedVoiceChannels', [], clear_list=True)
-				await ctx.send(f"I can now join any voice channel")
-			else:
-				await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-				return await ctx.message.delete(delay=15)
+	@musicvc_.command(aliases=['clear'])
+	async def clear_vc(ctx):
+		server = str(ctx.guild.id)
+		await update_settings_json(server, 'acceptedVoiceChannels', [], clear_list=True)
+		await ctx.send(f"I can now join any voice channel")
 
-		elif len(args) == 2:
-			try:
-				if RepresentsInt(args[1]):
-					channel = ctx.guild.get_channel(int(reSearch(r'\d+', args[1]).group()))
-				else:
-					if args[1] == "current":
-						channel = ctx.author.voice.channel
-					else:
-						await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-						return await ctx.message.delete(delay=15) 
-				
-				if channel in ctx.guild.voice_channels:
-					if args[0] == "add":
-						await update_settings_json(server, 'acceptedVoiceChannels', channel.id, add_to_list=True)
-						serverSettings[server]['acceptedVoiceChannels'].append(channel.id)
-						await ctx.send(f"I've added {channel.mention} to the allowed voice channels")
-					elif args[0] == "remove" or args[0] == "delete":
-						if len(accVC) == 0:
-							return await ctx.send(f"The allowed voice channels list is currently empty, I can currently join all voice channels")
-						if channel.id in accVC:
-							await update_settings_json(server, 'acceptedVoiceChannels', channel.id, add_to_list=True)
-							serverSettings[server]['acceptedVoiceChannels'].remove(channel.id)
-							await ctx.send(f"I've removed {channel.mention} from the allowed voice channels")
-						else:
-							await ctx.send(f"That channel is not an allowed voice channel")
-					else:
-						await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-						return await ctx.message.delete(delay=15)
-				else:
-					await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-					return await ctx.message.delete(delay=15)
-			except:
-				await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-				return await ctx.message.delete(delay=15)
+	@musicvc_.command(aliases=['add'])
+	async def add_vc(ctx, channel: Current_or_id_channel(True)):
+		server = str(ctx.guild.id)
+		accVC = serverSettings[server]['acceptedVoiceChannels']
+		if channel.id in accVC:
+			await ctx.send(f"The channel {channel.mention} is already one of the allowed voice channels")
 		else:
-			#idk what it is, errrooooor
-			await ( await ctx.send(f"Wrong arguments, please follow the documentation or use {await determine_prefix(bot, ctx.message)}help.")).delete(delay=15)
-			return await ctx.message.delete(delay=15)
+			await update_settings_json(server, 'acceptedVoiceChannels', channel.id, add_to_list=True)
+			await ctx.send(f"I've added {channel.mention} to the allowed voice channels")
+
+	@musicvc_.command(aliases=['remove'])
+	async def remove_vc(ctx, channel: Current_or_id_channel(True)):
+		server = str(ctx.guild.id)
+		accVC = serverSettings[server]['acceptedVoiceChannels']
+		if len(accVC) == 0:
+			return await ctx.send(f"The allowed voice channels list is currently empty, I can already join all voice channels")
+		if channel.id in accVC:
+			await update_settings_json(server, 'acceptedVoiceChannels', channel.id, add_to_list=False)
+			await ctx.send(f"I've removed {channel.mention} from the allowed voice channels")
+		else:
+			await ctx.send(f"That channel is not an allowed voice channel")
+
 
 	@bot.command(aliases=['download_default_playlist'])
 	@commands.check(is_dj)
@@ -2682,7 +2645,6 @@ if __name__ == "__main__":
 		await msg.edit(content = f"`{len(playlistlist)}/{len(playlistlist)} songs downloaded`")
 		await ctx.send("Finished downloading and preparing the default playlist")
 		
-
 
 
 ######################################
