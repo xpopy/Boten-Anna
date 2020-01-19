@@ -38,9 +38,9 @@ A discord bot written in python
 
         1. Open the Environment Variables window:
     
-        2. press `Win + R` and paste in `rundll32.exe sysdm.cpl,EditEnvironmentVariables` and hit ok
+        2. Press `Win + R` and paste in `rundll32.exe sysdm.cpl,EditEnvironmentVariables` and hit ok
   
-        3. In `User variables for {username}` double click on `Path`.
+        3. In `User variables for {username}` double click on `Path`
 
         4. In the new window, click on `New` and type in `C:\ffmpeg\bin\` and hit enter, now hit `OK` on the open windows
 
