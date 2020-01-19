@@ -785,8 +785,7 @@ async def helpFunction(ctx, helpCommand=None):
 					"setdj",
 					"prefix",
 					"musictc",
-					"musicvc",
-					'download_default_playlist']
+					"musicvc"]
 
 	if not helpCommand:
 		#no helpCommand which means show the whole help message
@@ -907,10 +906,11 @@ async def helpFunction(ctx, helpCommand=None):
 			description += "Skips the currently playing song to play the requested song"
 		
 		elif helpCommand == "playlist":
-			commandSyntax += "(playlist | pl) (clear | add song | remove song)"
+			commandSyntax += "(playlist | pl) (clear | download | add song | remove song)"
 			description += "Adds or removes songs from the default playlist (which plays when there's nothing else queued)\n\n"
 			description += "Note that a song cand be either a youtube url, a song name, or a link to a youtube playlist\n\n"
 			description += f"**Example:** `{prefix}playlist clear` completely clears the default playlist\n"
+			description += f"**Example:** `{prefix}playlist download` downloads all the songs in the default playlist\n"
 			description += f"**Example:** `{prefix}playlist add darude sandstorm` adds \"Darude Sandstorm\" to the default playlist\n"
 			description += f"**Example:** `{prefix}playlist remove darude sandstorm`, you guessed it, removes \"Darude Sandstorm\" from the default playlist"
 		
@@ -991,9 +991,7 @@ async def helpFunction(ctx, helpCommand=None):
 			description += f"**Example:** `{prefix}musicvc add current` adds the voicechannel you're currently in \n"
 			description += f"**Example:** `{prefix}musicvc remove 653341521223090183` removes the channel with the ID \"653341521223090183\"\n"
 			description += f"**Example:** `{prefix}musicvc clear` will make the bot able to join all channels again"
-		elif helpCommand == "download_default_playlist":
-			commandSyntax += "download_default_playlist"
-			description += "Downloads all songs that are in the default playlist and prepares them so that next time you play it will be instant"
+
 		commandSyntax += "`\n\n"
 		embed = discord.Embed(description=commandSyntax + description)
 		embed.set_author(name=bot.user.name + " Help Menu" , icon_url=bot.user.avatar_url)
@@ -2181,6 +2179,45 @@ if __name__ == "__main__":
 			defaultPlaylist = await getDefaultPlaylist(ctx.guild.id)
 			await bookList(ctx.channel, mPlayer, create_playlist_string, defaultPlaylist, itemsPerPage=10)
 	
+	@playlist_.command(aliases=['download'])
+	async def download_playlist(ctx):
+		mPlayer = get_player(ctx.guild)
+
+		server = str(mPlayer._guild.id)
+		data = await getDefaultPlaylist(server)
+		if not data:
+			return await ctx.send(content="There's no songs in the default playlist")
+
+		print("downloading default playlist")
+		playlistlist = []
+		for link in data:
+			if "playlist?list=" in link:
+				_, _, links = await get_playlist_info(link)
+				playlistlist = playlistlist + links
+			else:
+				playlistlist.append(link)
+
+		await ctx.send(content=f"Downloading {len(playlistlist)} songs from default playlist, this might take a while...")
+					
+		print("downloading default")
+		msg = await ctx.send(content=f"`0/{len(playlistlist)} songs downloaded`")
+		for i, url in enumerate(playlistlist, 1):
+			skip = False
+			for song in mPlayer.processedQueue:
+				if song.url == url:
+					#Song is already in queue, no need to download it again so just duplicate the object
+					skip = True
+			if skip:
+				continue
+
+			print(f"{i}/{len(playlistlist)} downloading: " + url)
+			await YTDLSource.from_url(mPlayer, url, loop=bot.loop, stream=False)
+			if i%2:
+				await msg.edit(content = f"`{i}/{len(playlistlist)} songs downloaded`")
+
+		await msg.edit(content = f"`{len(playlistlist)}/{len(playlistlist)} songs downloaded`")
+		await ctx.send("Finished downloading and preparing the default playlist")
+
 	@playlist_.command(aliases=['clear'])
 	async def clear_playlist(ctx):
 		server = str(ctx.guild.id)
@@ -2604,48 +2641,6 @@ if __name__ == "__main__":
 			await ctx.send(f"I've removed {channel.mention} from the allowed voice channels")
 		else:
 			await ctx.send(f"That channel is not an allowed voice channel")
-
-
-	@bot.command(aliases=['download_default_playlist'])
-	@commands.check(is_dj)
-	async def download_default_playlist_(ctx):
-		mPlayer = get_player(ctx.guild)
-
-		server = str(mPlayer._guild.id)
-		data = await getDefaultPlaylist(server)
-		if not data:
-			return await ctx.send(content="There's no songs in the default playlist")
-
-		print("downloading default playlist")
-		playlistlist = []
-		for link in data:
-			if "playlist?list=" in link:
-				_, _, links = await get_playlist_info(link)
-				playlistlist = playlistlist + links
-			else:
-				playlistlist.append(link)
-
-		await ctx.send(content=f"Downloading {len(playlistlist)} songs from default playlist, this might take a while...")
-					
-		print("downloading default")
-		msg = await ctx.send(content=f"`0/{len(playlistlist)} songs downloaded`")
-		for i, url in enumerate(playlistlist, 1):
-			skip = False
-			for song in mPlayer.processedQueue:
-				if song.url == url:
-					#Song is already in queue, no need to download it again so just duplicate the object
-					skip = True
-			if skip:
-				continue
-
-			print(f"{i}/{len(playlistlist)} downloading: " + url)
-			await YTDLSource.from_url(mPlayer, url, loop=bot.loop, stream=False)
-			if i%2:
-				await msg.edit(content = f"`{i}/{len(playlistlist)} songs downloaded`")
-
-		await msg.edit(content = f"`{len(playlistlist)}/{len(playlistlist)} songs downloaded`")
-		await ctx.send("Finished downloading and preparing the default playlist")
-		
 
 
 ######################################
