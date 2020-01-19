@@ -14,14 +14,21 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #pipenv lock
 
 #TODO: split up into modules (cogs?)
+	# __local_check a check that only works for cogs in the current file
+	# __global_check_once only checks once, good for commands with subcommands maybe
+	# might have to rewrite global variables like players and serversettings into their own modules
 
 
-
-#TODO: default playlist is empty string is weird
+#TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
+	#TODO: Allows for seeking, set_eq
+#TODO: if a songs audio levels are close enough then don't normalize it
+#TODO: typing in !play/!pause will make the np message sticky instantly
+#TODO: playing foo fighters caused an error, check Error.txt
 #TODO: maybe place player and downloader in a try catch loop so that it doesn't crash when an issue happens
-#TODO: join is buggy if there's no song in playlist
 #TODO: Check if ffmpeg is installed in initialization
 
+
+#TODO: read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
 #TODO: Write a short comment on what functions do
 #TODO: rewrite help as a dictionary with categories, commands, short description and a long description
 	#TODO: https://i.imgur.com/L2Z3IYo.png
@@ -321,7 +328,7 @@ def create_progressbar(timePaused, timeStarted, duration, is_paused):
 def create_playlist_string(mPlayer, playlist, startIndex, itemsPerPage):
 	description = ""
 	if len(playlist) == 0:
-		description += f'Default playlist is empty` \n'
+		description += f'Default playlist is empty \n'
 		return description
 	else:
 		description +='**Default playlist:** \n\n'
@@ -779,7 +786,7 @@ async def helpFunction(ctx, helpCommand=None):
 					"prefix",
 					"musictc",
 					"musicvc",
-					'prepare_default_playlist']
+					'download_default_playlist']
 
 	if not helpCommand:
 		#no helpCommand which means show the whole help message
@@ -984,8 +991,8 @@ async def helpFunction(ctx, helpCommand=None):
 			description += f"**Example:** `{prefix}musicvc add current` adds the voicechannel you're currently in \n"
 			description += f"**Example:** `{prefix}musicvc remove 653341521223090183` removes the channel with the ID \"653341521223090183\"\n"
 			description += f"**Example:** `{prefix}musicvc clear` will make the bot able to join all channels again"
-		elif helpCommand == "prepare_default_playlist":
-			commandSyntax += "prepare_default_playlist"
+		elif helpCommand == "download_default_playlist":
+			commandSyntax += "download_default_playlist"
 			description += "Downloads all songs that are in the default playlist and prepares them so that next time you play it will be instant"
 		commandSyntax += "`\n\n"
 		embed = discord.Embed(description=commandSyntax + description)
@@ -1526,7 +1533,7 @@ if __name__ == "__main__":
 	bot = commands.Bot(command_prefix=determine_prefix)
 
 	#Check for Discord API token
-	if settings['token'] == "PUT_TOKEN_HERE":
+	if settings['token'] == "PUT_TOKEN_HERE": # Don't actually put your token here, it's only a test to see if there exists a token
 		print("\nWrong token, open the settings/config.json file and replace \"PUT_TOKEN_HERE\" with your bots token from the discord developer portal\n" +
 			  "It has to be surrounded by quotes, example: \"NjQdMzayODY5cTI3ODYtMzA2.XcVZPg.ZjG28fgYJkzEw3abOgs3r3DtJVQ\"\n")
 		quit()
@@ -2103,24 +2110,18 @@ if __name__ == "__main__":
 	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
 	async def join_(ctx):
-		mPlayer = get_player(ctx.guild)
-		if ctx.voice_client == None:
-			# Bot is not in a channel
-			await ctx.message.author.voice.channel.connect()
+		defaultPlaylist = await getDefaultPlaylist(ctx.guild.id)
+		if len(defaultPlaylist) == 0:
+			return await ctx.send("There's no song to be played, either use the play command with a song or add a song to the default playlist")
+
+		if(await join_voice_and_play(ctx)):
+			mPlayer = get_player(ctx.guild)
 			mPlayer.downloader.set()
-
+			
 			await asyncio.sleep(1)
-
 			val = getBoolSetting(str(ctx.guild.id), 'nowPlayingAuto')
 			if val:
 				await now_playing(ctx.guild, ctx.channel, preparing=True, forceSticky=True)
-
-		elif ctx.message.author.voice.channel == ctx.voice_client.channel:
-			# Bot is in same channel
-			await ctx.send('I\'m already in your channel dummy')
-		else:
-			# Bot is in another channel
-			await ctx.voice_client.move_to(ctx.message.author.voice.channel)
 
 	@bot.command(aliases=['play', 'p'])
 	@commands.check(is_accepted_text_channel)
