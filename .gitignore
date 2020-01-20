@@ -1,5 +1,6 @@
 # Settings files
-
+.json
+settings/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

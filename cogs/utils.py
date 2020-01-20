@@ -12,18 +12,14 @@ defaultPrefix = "$"
 async def determine_prefix(bot, message):
 	''' Returns the prefix for the server that the message was sent in '''
 	global config
+	global serverSettings
 	#Only allow custom prefixs in guild
 	if not config:
 		config = getConfig()
 	guild = message.guild
-	if guild:
-		guildSettings = getServerSetting(str(guild.id), "prefix")
-		if guildSettings:
-			return guildSettings.get("prefix", config['defaultPrefix'])
-		else:
-			return config['defaultPrefix']
-	else:
-		return config['defaultPrefix']
+	if guild and guild in serverSettings:
+		return serverSettings[guild].get("prefix", config['defaultPrefix'])
+	return config['defaultPrefix']
 
 async def set_message_reactions(msg, new_reactions):
 	await msg.clear_reactions()
@@ -32,7 +28,6 @@ async def set_message_reactions(msg, new_reactions):
 		await msg.add_reaction(reaction)
 
 def getConfig():
-	print("getting config")
 	''' Returns the bot config if it exists, otherwise generate it '''
 	global config
 	if config:
@@ -45,10 +40,12 @@ def getConfig():
 			data = ('{ \n' +
 						'\t"token": "PUT_DISCORD_TOKEN_HERE", \n' +
 						'\t"tenor_key": "PUT_TENOR_TOKEN_HERE", \n' +
-						f'\t"defaultPrefix": {defaultPrefix}\n' +
+						f'\t"defaultPrefix": "{defaultPrefix}"\n' +
 					'}')
 			f.write(data)
+			print()
 			print("Generated config file, open it and insert the bot token")
+			print()
 			quit()
 	else:
 		with open(configFile) as json_file:
@@ -60,7 +57,7 @@ def initializeServerSettings():
 	os.makedirs(os.path.dirname(server_settings_location), exist_ok=True)
 	with open(server_settings_location, 'w+') as f:
 		data = {}
-		f.write(data)
+		json.dump(data, f)
 
 def getServerSetting(server, field):
 	''' Returns the server settings if it exists, otherwise generate it '''
@@ -114,8 +111,8 @@ def getServerPlaylist(server: str):
 		print("Initializing playlist file")
 		os.makedirs(os.path.dirname(playlist_location), exist_ok=True)
 		with open(playlist_location, 'w+') as f:
-			data = '{}'
-			f.write(data)
+			data = {}
+			json.dump(data, f)
 	else:
 		with open(playlist_location, 'r') as json_file:
 			data = json.load(json_file)

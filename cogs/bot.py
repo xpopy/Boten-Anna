@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from tendo import singleton
+import asyncio
 import json
 import os
 import sys
@@ -12,17 +13,15 @@ import utils
 #TODO: maybe move getDefaultPlaylist, getPlayer etc to another player.py?
 #TODO: use threads for updating files
 
+#TODO: add restart/reload to help commands
+
 #TODO:
 #	getServerPlaylist
 #	get_playlist_json
 #	getDefaultPlaylist
 
 
-
-
-
-
-
+#TODO: when restarting the event loop closes, need to figure out a way to restart the event loop
 
 
 
@@ -37,6 +36,7 @@ if utils.getConfig()['token'] == "PUT_DISCORD_TOKEN_HERE": # Don't actually put 
 	quit()
 
 
+returnCode = "exit"
 bot = commands.Bot(command_prefix=utils.determine_prefix)
 
 #Make sure cogs folder exists
@@ -44,18 +44,19 @@ if not os.path.exists(f'./{cogs_folder}'):
 	os.makedirs(f'./{cogs_folder}')
 
 #Load all cogs
+print()
 for filename in os.listdir(f'./{cogs_folder}'):
 	if filename == "utils.py" or filename == "bot.py":
 		continue
 	if filename.endswith('.py'):
+		
 		try:
 			bot.load_extension(f'{cogs_folder}.{filename[:-3]}')
+			print(f'"{filename}" loaded')
 		except Exception as e:
-			print()
-			print(f'{filename} failed to load:')
-			print(e)
-
-
+			print(f'"{filename}" failed to load:')
+			print(f"\t{e}")
+print()
 
 
 @bot.event
@@ -71,7 +72,6 @@ async def on_command_error(ctx, error):
 			await utils.helpFunction(ctx, helpCommand = ctx.command.parent.aliases + [ctx.command.parent.name] )
 		else:
 			await utils.helpFunction(ctx, helpCommand = ctx.command.aliases + [ctx.command.name] )
-
 
 	elif isinstance(error, discord.errors.Forbidden):
 		print("Missing permissions")
@@ -124,18 +124,11 @@ async def reload(ctx, extension = None):
 			await ctx.send(e)
 			print(e)
 		return
-	for filename in os.listdir(f'./{cogs_folder}'):
-		if filename.endswith('.py'):
-			if filename == "utils.py" or filename == "bot.py":
-				continue	
-			try:
-				bot.reload_extension(f'{cogs_folder}.{filename[:-3]}')
-				response = f'\'{filename[:-3]}\' has been reloaded'
-				await ctx.send(response)
-				print(response)
-			except Exception as e:
-				await ctx.send(e)
-				print(e)
+	else:
+		global returnCode
+		returnCode = "restart"
+		await ctx.send("Restarting, brb :D")
+		return await ctx.bot.logout()
 
 @bot.command()
 @commands.is_owner()
@@ -155,6 +148,11 @@ async def on_ready():
 def run():
 	try:
 		bot.run(utils.getConfig()['token'])
+		return returnCode
+		
 	except Exception as e:
-		print(e)
-		print("\nWrong token, please make sure the token in the config file is the corrent one\n\n")
+		if isinstance(e, discord.errors.LoginFailure):
+			print("\nWrong token, please make sure the token in the config file is the corrent one\n\n")
+		else:
+			print(e)
+		

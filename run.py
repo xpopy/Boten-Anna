@@ -1,17 +1,22 @@
-import discord
-from discord.ext import commands
 from tendo import singleton
-import cogs.bot as bot
-import json
+import subprocess
 import sys
-import os
+import importlib
+import cogs.bot as bot
 
 
 #TODO: check if cogs folder exists
 	# also check for bot.py and maybe utils.py
 
-if __name__ == "__main__":
-	me = singleton.SingleInstance()
-	bot.run()
+#TODO: test restart when using pipenv
 
-	print("we're back")
+if __name__ == "__main__":
+#	me = singleton.SingleInstance()
+
+	exitCode = bot.run()
+
+	if exitCode == "restart":
+		print("Restarting Bot")
+		print()
+		subprocess.call([sys.executable, "run.py"])
+

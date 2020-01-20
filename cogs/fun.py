@@ -64,10 +64,6 @@ class Fun(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	@commands.Cog.listener()
-	async def on_ready(self):
-		print(f"'{self.__class__.__name__}' loaded")
-
 	@commands.command(aliases=['8ball', '8'])
 	async def question8ball(self, ctx, *, question: str):
 		if question[-1] != "?":
