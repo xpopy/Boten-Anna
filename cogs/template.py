@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-class Example(commands.Cog):
+class Template(commands.Cog):
 
 	def __init__(self, bot):
 		self.bot = bot
@@ -12,10 +12,10 @@ class Example(commands.Cog):
 
 
 	@commands.command()
-	async def test2(self, ctx):
+	async def func(self, ctx):
 		await ctx.send("42")
 
 	
 
 def setup(bot):
-	bot.add_cog(Example(bot))
+	bot.add_cog(Template(bot))

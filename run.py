@@ -13,3 +13,5 @@ import os
 if __name__ == "__main__":
 	me = singleton.SingleInstance()
 	bot.run()
+
+	print("we're back")

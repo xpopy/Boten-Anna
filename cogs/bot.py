@@ -48,7 +48,12 @@ for filename in os.listdir(f'./{cogs_folder}'):
 	if filename == "utils.py" or filename == "bot.py":
 		continue
 	if filename.endswith('.py'):
-		bot.load_extension(f'{cogs_folder}.{filename[:-3]}')
+		try:
+			bot.load_extension(f'{cogs_folder}.{filename[:-3]}')
+		except Exception as e:
+			print()
+			print(f'{filename} failed to load:')
+			print(e)
 
 
 

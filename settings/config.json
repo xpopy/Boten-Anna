@@ -1,6 +1,0 @@
-{ 
-	"token": "INSERT DISCORD TOKEN", 
-	"tenor_key": "INSERT API KEY",
-	"musicFolder": "music_cache/", 
-	"defaultPrefix": "!"
-}
