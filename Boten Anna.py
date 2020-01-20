@@ -18,7 +18,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 	# __global_check_once only checks once, good for commands with subcommands maybe
 	# might have to rewrite global variables like players and serversettings into their own modules
 
-
 #TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
 	#TODO: Allows for seeking, set_eq
 #TODO: if a songs audio levels are close enough then don't normalize it
@@ -28,9 +27,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #TODO: Check if ffmpeg is installed in initialization
 
 
-#TODO: read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
 #TODO: Write a short comment on what functions do
-#TODO: rewrite help as a dictionary with categories, commands, short description and a long description
+#TODO: read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
+	#TODO: show subscommands in the main help menu
+	#TODO: maybe rewrite help as a dictionary with categories, commands, short description and a long description
 	#TODO: https://i.imgur.com/L2Z3IYo.png
 	#TODO: Move it to initialize so it doesn't have to create it every time we want to check help
 #TODO: re-enable playing playlists
