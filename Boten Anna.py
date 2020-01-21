@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #pipenv install (package)
 #pipenv lock
 
+#TODO: Np message seems to not update sometimes? Might be discord bug
 #TODO: split up into modules (cogs?)
 	# __local_check a check that only works for cogs in the current file
 	# __global_check_once only checks once, good for commands with subcommands maybe
@@ -1460,7 +1461,7 @@ if __name__ == "__main__":
 	from datetime import datetime
 	from threading import Thread
 	from tendo import singleton
-	from random import shuffle
+	from random import shuffle, randint
 	import youtube_dl
 	import asyncio
 	import ffmpeg
@@ -1668,6 +1669,15 @@ if __name__ == "__main__":
 #####################################
 
 #Fun commands:
+
+
+	@bot.command(aliases=['flip', 'coin'])
+	async def coinflip(ctx):
+		flip = randint(0, 1)
+		if flip:
+			await ctx.send(content = "`It's tails!`")
+		else:
+			await ctx.send(content = "`It's heads!`")
 
 	@bot.command(aliases=['8ball', '8'])
 	async def question8ball(ctx, *, question: str):
