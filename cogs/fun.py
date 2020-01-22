@@ -2,15 +2,14 @@ import discord
 from discord.ext import commands
 from requests import get as requestGet
 from urllib import parse as urlParse
-from random import randrange, shuffle, choice as randElement
+from random import randrange, shuffle, randint, choice as randElement
 import asyncio
 import json
 import sys
 
+
 sys.path.append('./cogs')
 import utils
-
-#utils.getConfig()
 
 nekoApiUrl = "https://nekos.life/api/v2/"
 
@@ -63,6 +62,14 @@ class Fun(commands.Cog):
 
 	def __init__(self, bot):
 		self.bot = bot
+
+	@commands.command(aliases=['flip', 'coin'])
+	async def coinflip(self, ctx):
+		flip = randint(0, 1)
+		if flip:
+			await ctx.send(content = "`It's tails!`")
+		else:
+			await ctx.send(content = "`It's heads!`")
 
 	@commands.command(aliases=['8ball', '8'])
 	async def question8ball(self, ctx, *, question: str):
@@ -180,7 +187,7 @@ class Fun(commands.Cog):
 		#High five text is done, time to get the gif and post it
 		await tenorAPI(ctx, "anime highfive", text)
 
-	@commands.command(alias=["owo"])
+	@commands.command(aliases=["owo"])
 	async def uwu(self, ctx, *, message = None):
 		if message:
 			urlString = urlParse.quote(message, safe='')

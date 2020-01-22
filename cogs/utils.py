@@ -1,6 +1,13 @@
 import discord
+import asyncio
 import json
+import time
 import os
+from bs4 import BeautifulSoup as bs4Soup
+from requests import get as requestGet
+from urllib import parse as urlParse
+
+import ytdl
 
 
 config = {}
@@ -8,6 +15,14 @@ serverSettings = {}
 server_settings_location = "settings/serverSettings.json"
 playlist_location = "settings/serverPlaylists.json"
 defaultPrefix = "$"
+defaultSettings = {"volume": 0.5,
+				   "acceptedVoiceChannels": [],
+				   "acceptedTextChannels": [],
+				   'prefix': defaultPrefix,
+				   'dj_role': None,
+				   'nowPlayingAuto': True,
+				   'nowPlayingSticky': True,
+				   'nowPlayingControls': True}
 
 async def determine_prefix(bot, message):
 	''' Returns the prefix for the server that the message was sent in '''
@@ -59,6 +74,13 @@ def initializeServerSettings():
 		data = {}
 		json.dump(data, f)
 
+def representsInt(s):
+	try: 
+		int(s)
+		return True
+	except ValueError:
+		return False
+
 def getServerSetting(server, field):
 	''' Returns the server settings if it exists, otherwise generate it '''
 	global serverSettings
@@ -67,6 +89,8 @@ def getServerSetting(server, field):
 
 	if serverSettings:
 		if server in serverSettings:
+			if field not in serverSettings[server]:
+				serverSettings[server][field] = defaultSettings[field]
 			return serverSettings[server][field]
 
 	if not os.path.exists(server_settings_location):
@@ -75,12 +99,14 @@ def getServerSetting(server, field):
 	with open(server_settings_location, 'r+') as json_file:
 		data = json.load(json_file)
 		if server not in data:
-			data[server] = {"volume": 0.5, "acceptedVoiceChannels": [], "acceptedTextChannels": [], 'prefix': defaultPrefix}
+			data[server] = defaultSettings
 			json_file.seek(0)
 			json.dump(data, json_file)
 			json_file.truncate()
 			serverSettings = data
 
+	if field not in serverSettings[server]:
+		serverSettings[server][field] = defaultSettings[field]
 	return serverSettings[server][field]
 
 def updateServerSettings(server, field, new_value):
@@ -135,12 +161,234 @@ async def getDefaultPlaylist(guildID):
 		data = get_playlist_json(json_file, server)
 	return data[server]
 
+def isurl(url):
+	#Find the start position of the ID
+	return "https://" in url
 
+def clampTitle(title):
+	maxLength = 40
+	if len(title) > maxLength:
+		title = title[:maxLength] + "..."
+	if title.rfind("[") > title.rfind("]"):
+		title = title[:title.rfind("[")]
+	return title
+
+def get_song_data_async(url):
+	""" gets url, title, amounts of songs or the thumbnail of either a playlist or a single song"""		
+	if isurl(url):
+		data = ytdl.ytdl.extract_info(url, download=False)
+		if 'entries' in data:
+			data = data['entries'][0] 
+		return (clampTitle(data['title']), data['webpage_url'], data["thumbnail"], data["duration"])
+	else:
+		#faster but only works for search
+		query_string = urlParse.urlencode({"search_query" : url})
+		text = requestGet("https://www.youtube.com/results?" + query_string).text
+		soup = bs4Soup(text, features="html.parser")
+
+		div = soup.select(".yt-lockup-dismissable")[0]
+		if div.select(".yt-lockup-playlist-item"):
+			#It's a playlist, we don't support playing it like this
+			return (None, None, None, None)
+
+
+		img0 = div.select(".yt-lockup-thumbnail img")[0]
+		a0 = div.select(".yt-lockup-title a")[0]
+		span0 = div.select(".yt-lockup-title span")[0]
+
+		title = a0['title']
+		href =  "https://www.youtube.com" + a0['href']
+		thumb = img0['src'] if not img0.has_attr('data-thumb') else img0['data-thumb']
+
+		durationSplit  = span0.text.split(": ")[1].split(":") 
+		durationSplit.reverse()
+		duration = 0
+		i = 0
+		for part in durationSplit:
+			if i == 0:
+				duration += int(part.replace('.', '')) 
+			else:
+				duration += int(part) * (i * 60)
+			i += 1
+		return (clampTitle(title), href, thumb, duration)
+
+async def get_song_data(url, loop=None):
+	loop = loop or asyncio.get_event_loop()
+	return await loop.run_in_executor(None, lambda: get_song_data_async(url))
+
+def convert_seconds(seconds):
+	"""converts seconds to a string with format "m:s" or "h:m:s" """
+	minutes, seconds = divmod(seconds, 60)
+	if minutes > 60:
+		hours, minutes = divmod(minutes, 60)
+		return '{:d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+	else:
+		return '{}:{:02d}'.format(minutes, seconds)
+
+def isPlaylist(url):
+	if "watch?v=" in url:
+		return False
+	else:
+		return "playlist?list=" in url
+def create_progressbar(timePaused, timeStarted, duration, is_paused):
+	if is_paused:
+		progress_time = round(timePaused)
+		description = ":pause_button: "
+	else:
+		progress_time = round(time.time() - timeStarted)
+		description = ":arrow_forward: "
+	
+	trackPercentage = progress_time/duration
+	trackBarParts = 11
+	trackPosition = round(trackBarParts * trackPercentage)
+
+	for i in range(trackBarParts + 1):
+		if i != trackPosition:
+			description += "▬"
+		else:
+			description += ":radio_button:"
+
+	songProgress = convert_seconds(progress_time)
+	songDuration = convert_seconds(duration)
+	description += f" `{songProgress}/{songDuration}`"
+	return description
+
+async def now_playing(guild, channel=None, preparing=False, dontSticky = False, forceSticky = False):
+	mPlayer = get_player(guild)
+	currentPlayer = mPlayer.current
+	msg = mPlayer.current_np_message
+
+
+	if preparing:
+		if mPlayer.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
+			nextSong = mPlayer.getQueueList(procDefault = True, prepareDefault = True)[0]
+			print(nextSong)
+			embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
+		else:
+			embed = discord.Embed(description="Preparing song...")
+
+		if msg and not forceSticky:
+			await msg.edit(embed=embed)
+			await set_message_reactions(msg, [])
+		else:
+			message = await channel.send(content="Now playing:", embed=embed)
+			mPlayer.current_np_message = message
+			mPlayer.stop_update_np.set()
+		return
+
+	if currentPlayer == None:
+		if guild.voice_client == None:
+			embed = discord.Embed(title="Player stopped")
+		elif mPlayer.getQueuedAmount(procDefault = True, prepareDefault = True) > 0:
+			if mPlayer.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
+				nextSong = mPlayer.getQueueList(procDefault = True, prepareDefault = False)[0]
+				if mPlayer.update_np_downloading.is_set():
+					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Downloading song...")
+				elif mPlayer.update_np_normalizing.is_set():
+					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Normalizing song volume...")
+				else:
+					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
+			else:
+				embed = discord.Embed(description="Preparing song...")
+		else:
+			embed = discord.Embed(description="There's no song playing")
+		if msg:
+			await msg.edit(embed=embed)
+			await set_message_reactions(msg, [])
+		else:
+			message = await channel.send(content="Now playing:", embed=embed)
+			mPlayer.current_np_message = message
+			mPlayer.stop_update_np.set()
+		return
+
+	sticky = getServerSetting(guild.id, 'nowPlayingSticky')
+	if (not forceSticky) and ( (dontSticky) or (not sticky) or (msg and msg.channel.last_message_id == msg.id) ):
+		em =  msg.embeds[0].description
+		description = create_progressbar(mPlayer.timePaused,
+										mPlayer.timeStarted,
+										currentPlayer.duration,
+										guild.voice_client.is_paused())
+
+		embed = discord.Embed(title=currentPlayer.title, url=currentPlayer.url, description=description)
+		await msg.edit(embed=embed)
+		controls = getServerSetting(guild.id, 'nowPlayingControls')
+		if not controls:
+			await set_message_reactions(msg, [])
+		elif em == "There's no song playing" or em == "Preparing song..." or em == "Downloading song..."  or em == "Normalizing song volume..." :
+			await set_message_reactions(msg, ["⏯️", "⏭️", "🔉", "🔊"])
+	else:
+		if msg:
+			channel = msg.channel
+		
+		content = "Now playing:"
+		
+		description = create_progressbar(mPlayer.timePaused,
+										mPlayer.timeStarted,
+										currentPlayer.duration,
+										guild.voice_client.is_paused())
+
+		embed = discord.Embed(title=currentPlayer.title, url=currentPlayer.url, description=description)
+		if msg:
+			await msg.delete()
+		message = await channel.send(content=content, embed=embed)
+		mPlayer.current_np_message = message
+		if not msg:
+			mPlayer.stop_update_np.set()
+		controls = getServerSetting(guild.id, 'nowPlayingControls')
+		if controls:
+			await set_message_reactions(message, ["⏯️", "⏭️", "🔉", "🔊"])
+		else:
+			await set_message_reactions(message, [])
+
+async def bookList(channel, mPlayer, func, playList, itemsPerPage=5):
+	''' Generates a list with pages that you can flip back and forth '''
+	pageIndex = 1
+	listIndex = 0
+	queueLength = len(playList)
+	pages = queueLength // itemsPerPage + (queueLength % itemsPerPage > 0)  #rounding up
+
+	leftEmoji = "⬅️"
+	rightEmoji = "➡️"
+
+	description = func(mPlayer, playList, listIndex, itemsPerPage)
+	originalEmbed = discord.Embed(title="", description=description)
+	originalEmbed.set_footer(text=f"Page {pageIndex}/{pages}")
+	message = await channel.send(embed=originalEmbed)
+	
+	if not pages > 1:
+		return
+
+	await message.add_reaction(leftEmoji)
+	await message.add_reaction(rightEmoji)
+	while True:
+		try:
+			reaction, user = await mPlayer.bot.wait_for('reaction_add', timeout=60.0)
+		except asyncio.TimeoutError:
+			await message.clear_reactions()
+			break
+		else:
+			if user == mPlayer.bot.user:
+				continue
+			await message.remove_reaction(reaction, user)
+			if str(reaction.emoji) == leftEmoji and pageIndex > 1:
+				pageIndex -= 1
+				listIndex -= itemsPerPage
+				description = func(mPlayer, playList, listIndex, itemsPerPage)
+				embed = discord.Embed(title="", description=description)
+				embed.set_footer(text=f"Page {pageIndex}/{pages}")
+				await message.edit(embed=embed)
+			elif str(reaction.emoji) == rightEmoji and pageIndex < pages:
+				pageIndex += 1
+				listIndex += itemsPerPage
+				description = func(mPlayer, playList, listIndex, itemsPerPage)
+				embed = discord.Embed(title="", description=description)
+				embed.set_footer(text=f"Page {pageIndex}/{pages}")
+				await message.edit(embed=embed)
 
 
 async def helpFunction(ctx, helpCommand=None):
 	''' Generates a help message, if a helpCommand is given then it generates a help message specific for that command '''
-	funCommandList = ["8ball", "kiss", "hug", "poke",
+	funCommandList = ["8ball", "coinflip", "kiss", "hug", "poke",
 					"feed", "cuddle", "slap", "pat", "tickle", 
 					"smug", "lick", "highfive", "uwu", "fact", 
 					"oof", "rekt", "dadjoke"]
@@ -195,6 +443,10 @@ async def helpFunction(ctx, helpCommand=None):
 		if helpCommand == "8ball":
 			commandSyntax += "8ball question"
 			description += "Asks the 8ball a question and it will reply with the truth"
+
+		elif helpCommand == "coinflip":
+			commandSyntax += "coinflip"
+			description += "Flips a coin, duuh"
 
 		elif helpCommand == "kiss":
 			commandSyntax += "kiss @user"

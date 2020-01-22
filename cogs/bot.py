@@ -1,13 +1,15 @@
-import discord
-from discord.ext import commands
-from tendo import singleton
 import asyncio
 import json
 import os
 import sys
 
+import discord
+from discord.ext import commands
+from tendo import singleton
+
 sys.path.append('./cogs')
 import utils
+
 
 
 #TODO: maybe move getDefaultPlaylist, getPlayer etc to another player.py?
@@ -15,16 +17,25 @@ import utils
 
 #TODO: add restart/reload to help commands
 
+#TODO: commands to add:
+	# github
+	# stats: time up, servers, amount of members in servers, etc
+	# uptime
+	# invite
+
+#TODO: create extension list and run only those
+		# remove the if checks for bot.py and utils.py
+
 #TODO:
 #	getServerPlaylist
 #	get_playlist_json
 #	getDefaultPlaylist
 
 
-#TODO: when restarting the event loop closes, need to figure out a way to restart the event loop
 
 
-
+#Only allow one bot to be online at the same time
+me = singleton.SingleInstance() 
 
 #Folder and File locations
 cogs_folder = 'cogs'
@@ -82,6 +93,18 @@ async def on_command_error(ctx, error):
 
 	else:
 		raise(error)
+
+
+@bot.check
+async def globally_block_dms(ctx):
+	return ctx.guild is not None
+
+@bot.check
+async def log_to_console(ctx):
+	print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
+	return True
+
+
 
 @bot.command()
 @commands.is_owner()
@@ -155,4 +178,3 @@ def run():
 			print("\nWrong token, please make sure the token in the config file is the corrent one\n\n")
 		else:
 			print(e)
-		
