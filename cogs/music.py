@@ -176,7 +176,7 @@ class Music(commands.Cog):
 	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
 	async def join_(self, ctx):
-		defaultPlaylist = await utils.getDefaultPlaylist(ctx.guild.id)
+		defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
 		if len(defaultPlaylist) == 0:
 			return await ctx.send("There's no song to be played, either use the play command with a song or add a song to the default playlist")
 
@@ -195,7 +195,7 @@ class Music(commands.Cog):
 	@commands.check(is_accepted_voice_channel)
 	async def play_(self, ctx,  *args):
 		if len(args) == 0:
-			defaultPlaylist = await utils.getDefaultPlaylist(ctx.guild.id)
+			defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
 			if len(defaultPlaylist) == 0:
 				return await ctx.send("There's no song to be played, either use the command again with a song or add a song to the default playlist")
 
@@ -247,7 +247,7 @@ class Music(commands.Cog):
 	async def playlist_(self, ctx):
 		if ctx.invoked_subcommand is None:
 			mPlayer = self.get_player(ctx.guild)
-			defaultPlaylist = await utils.getDefaultPlaylist(ctx.guild.id)
+			defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
 			await utils.bookList(ctx.channel, mPlayer, self.create_playlist_string, defaultPlaylist, itemsPerPage=10)
 	
 	@playlist_.command(aliases=['clear'])
@@ -266,7 +266,7 @@ class Music(commands.Cog):
 		if utils.isPlaylist(searchOrUrl): #It's a playlist
 			title, url, songs = await get_playlist_info(searchOrUrl)
 
-			data = await utils.getDefaultPlaylist(server)
+			data = utils.getServerPlaylist(server)
 			if url in data:
 				return await ctx.send(f"That playlist is already added")
 
@@ -282,7 +282,7 @@ class Music(commands.Cog):
 			except:
 				await ctx.send(f"Wrong arguments, check `{await utils.determine_prefix(self.bot, ctx.message)}help playlist`")
 			
-			data = await utils.getDefaultPlaylist(server)
+			data = utils.getServerPlaylist(server)
 			if url in data:
 				return await ctx.send(f"That song already exists in the playlist")
 		
@@ -302,7 +302,7 @@ class Music(commands.Cog):
 		if utils.isPlaylist(searchOrUrl):
 			title, url, songs = await get_playlist_info(searchOrUrl)
 
-			data = await utils.getDefaultPlaylist(server)
+			data = utils.getServerPlaylist(server)
 			if not url in data:
 				return await ctx.send(f"That youtube playlist doesn't exist in the playlist")
 
@@ -319,7 +319,7 @@ class Music(commands.Cog):
 			except:
 				await ctx.send(f"Wrong arguments, check `{await utils.determine_prefix(self.bot, ctx.message)}help playlist`")
 
-			data = await utils.getDefaultPlaylist(server)
+			data = utils.getServerPlaylist(server)
 			if not url in data:
 				return await ctx.send(f"That song doesn't exist in the playlist")
 				
@@ -679,7 +679,7 @@ class Music(commands.Cog):
 		mPlayer = self.get_player(ctx.guild)
 
 		server = str(mPlayer._guild.id)
-		data = await utils.getDefaultPlaylist(server)
+		data = utils.getServerPlaylist(server)
 		if not data:
 			return await ctx.send(content="There's no songs in the default playlist")
 

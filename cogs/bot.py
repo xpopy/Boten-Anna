@@ -41,7 +41,7 @@ me = singleton.SingleInstance()
 cogs_folder = 'cogs'
 
 #Check for Discord API token
-if utils.getConfig()['token'] == "PUT_DISCORD_TOKEN_HERE": # Don't actually put your token here, it's only a test to see if there exists a token
+if utils.getConfig('token') == "PUT_DISCORD_TOKEN_HERE": # Don't actually put your token here, it's only a test to see if there exists a token
 	print("\nWrong token, open the settings/config.json file and replace \"PUT_TOKEN_HERE\" with your bots token from the discord developer portal\n" +
 			"It has to be surrounded by quotes, example: \"NjQdMzayODY5cTI3ODYtMzA2.XcVZPg.ZjG28fgYJkzEw3abOgs3r3DtJVQ\"\n")
 	quit()
@@ -170,7 +170,7 @@ async def on_ready():
 
 def run():
 	try:
-		bot.run(utils.getConfig()['token'])
+		bot.run(utils.getConfig('token'))
 		return returnCode
 		
 	except Exception as e:

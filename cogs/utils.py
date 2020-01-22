@@ -10,8 +10,9 @@ from urllib import parse as urlParse
 import ytdl
 
 
-config = {}
-serverSettings = {}
+configCache = {}
+serverSettingsCache = {}
+playlistCache = {}
 server_settings_location = "settings/serverSettings.json"
 playlist_location = "settings/serverPlaylists.json"
 defaultPrefix = "$"
@@ -24,29 +25,27 @@ defaultSettings = {"volume": 0.5,
 				   'nowPlayingSticky': True,
 				   'nowPlayingControls': True}
 
+
+def initializeJsonFile(fileLocation):
+	print("Initializing the server settings file")
+	os.makedirs(os.path.dirname(fileLocation), exist_ok=True)
+	with open(fileLocation, 'w+') as f:
+		data = {}
+		json.dump(data, f)
+
 async def determine_prefix(bot, message):
 	''' Returns the prefix for the server that the message was sent in '''
-	global config
-	global serverSettings
 	#Only allow custom prefixs in guild
-	if not config:
-		config = getConfig()
-	guild = message.guild
-	if guild and guild in serverSettings:
-		return serverSettings[guild].get("prefix", config['defaultPrefix'])
-	return config['defaultPrefix']
+	if message.guild:
+		return getServerSetting(message.guild.id, "prefix")
+	else:
+		return getConfig("prefix")
 
-async def set_message_reactions(msg, new_reactions):
-	await msg.clear_reactions()
-
-	for reaction in new_reactions:
-		await msg.add_reaction(reaction)
-
-def getConfig():
+def getConfig(key):
 	''' Returns the bot config if it exists, otherwise generate it '''
-	global config
-	if config:
-		return config
+	global configCache
+	if configCache:
+		return configCache[key]
 
 	configFile = 'settings/config.json'
 	if not os.path.exists(configFile):
@@ -65,36 +64,22 @@ def getConfig():
 	else:
 		with open(configFile) as json_file:
 			data = json.load(json_file)
-	return data
-
-def initializeServerSettings():
-	print("Initializing the server settings file")
-	os.makedirs(os.path.dirname(server_settings_location), exist_ok=True)
-	with open(server_settings_location, 'w+') as f:
-		data = {}
-		json.dump(data, f)
-
-def representsInt(s):
-	try: 
-		int(s)
-		return True
-	except ValueError:
-		return False
+	return data[key]
 
 def getServerSetting(server, field):
 	''' Returns the server settings if it exists, otherwise generate it '''
-	global serverSettings
+	global serverSettingsCache
 	if type(server) == int:
 		server = str(server)
 
-	if serverSettings:
-		if server in serverSettings:
-			if field not in serverSettings[server]:
-				serverSettings[server][field] = defaultSettings[field]
-			return serverSettings[server][field]
+	if serverSettingsCache:
+		if server in serverSettingsCache:
+			if field not in serverSettingsCache[server]:
+				updateServerSettings(server, field, defaultSettings[field])
+			return serverSettingsCache[server][field]
 
 	if not os.path.exists(server_settings_location):
-		initializeServerSettings()
+		initializeJsonFile(server_settings_location)
 
 	with open(server_settings_location, 'r+') as json_file:
 		data = json.load(json_file)
@@ -103,20 +88,20 @@ def getServerSetting(server, field):
 			json_file.seek(0)
 			json.dump(data, json_file)
 			json_file.truncate()
-			serverSettings = data
+			serverSettingsCache = data
 
-	if field not in serverSettings[server]:
-		serverSettings[server][field] = defaultSettings[field]
-	return serverSettings[server][field]
+	if field not in serverSettingsCache[server]:
+		updateServerSettings(server, field, defaultSettings[field])
+	return serverSettingsCache[server][field]
 
 def updateServerSettings(server, field, new_value):
 	''' Updates the server settings if it exists, otherwise generate it '''
-	global serverSettings
+	global serverSettingsCache
 	if type(server) == int:
 		server = str(server)
 
 	if not os.path.exists(server_settings_location):
-		initializeServerSettings()
+		initializeJsonFile(server_settings_location)
 		
 	with open(server_settings_location, 'r+') as json_file:
 		data = json.load(json_file)
@@ -128,38 +113,52 @@ def updateServerSettings(server, field, new_value):
 		data[server][field] = new_value
 		json.dump(data, json_file)
 		json_file.truncate()
-		serverSettings = data
+		serverSettingsCache = data
 
-def getServerPlaylist(server: str):
+def getServerPlaylist(server):
 	''' Returns the server playlist if it exists, otherwise generate it '''
+	global playlistCache
+	if type(server) == int:
+		server = str(server)	
+
+	if playlistCache:
+		if server in playlistCache:
+			return playlistCache[server]
+		else:
+			return []
 
 	if not os.path.exists(playlist_location):
-		print("Initializing playlist file")
-		os.makedirs(os.path.dirname(playlist_location), exist_ok=True)
-		with open(playlist_location, 'w+') as f:
-			data = {}
-			json.dump(data, f)
-	else:
-		with open(playlist_location, 'r') as json_file:
-			data = json.load(json_file)
-	return data[server]
+		initializeJsonFile(playlist_location)
 
-def get_playlist_json(json_file, server):
-	try:
+	with open(playlist_location, 'r+') as json_file:
 		data = json.load(json_file)
-		if not server in data:
+		if server not in data:
 			data[server] = []
-	except json.JSONDecodeError:
-		data = {}
-		data[server] = []
-	json_file.seek(0)
-	return data
-async def getDefaultPlaylist(guildID):
-	data = {}
-	server = str(guildID)
-	with open(playlist_location, 'r', encoding='utf-8') as json_file:
-		data = get_playlist_json(json_file, server)
-	return data[server]
+			json_file.seek(0)
+			json.dump(data, json_file)
+			json_file.truncate()
+			playlistCache = data
+		
+	return playlistCache[server]
+
+def representsInt(s):
+	try: 
+		int(s)
+		return True
+	except ValueError:
+		return False
+
+async def set_message_reactions(msg, new_reactions):
+	await msg.clear_reactions()
+	for reaction in new_reactions:
+		await msg.add_reaction(reaction)
+
+
+
+
+
+
+
 
 def isurl(url):
 	#Find the start position of the ID
@@ -230,6 +229,7 @@ def isPlaylist(url):
 		return False
 	else:
 		return "playlist?list=" in url
+
 def create_progressbar(timePaused, timeStarted, duration, is_paused):
 	if is_paused:
 		progress_time = round(timePaused)

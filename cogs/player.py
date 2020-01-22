@@ -330,7 +330,7 @@ class MusicPlayer:
 
 					else:
 						server = str(self._guild.id)
-						data = await utils.getDefaultPlaylist(server)
+						data = utils.getServerPlaylist(server)
 						if data:
 							print("preparing default")
 							newList = []
