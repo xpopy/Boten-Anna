@@ -13,7 +13,7 @@ import utils
 
 
 #TODO: maybe move getDefaultPlaylist, getPlayer etc to another player.py?
-#TODO: use threads for updating files
+#TODO: maybe use threads for updating files
 
 #TODO: add restart/reload to help commands
 

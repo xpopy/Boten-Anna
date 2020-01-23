@@ -130,7 +130,7 @@ class MusicPlayer:
 						await ctx.message.delete(delay=15)
 						return
 					
-					title, url, songs = await get_playlist_info(url)
+					title, url, songs = await utils.get_playlist_info(url)
 					self.prepareQueue.play = self.prepareQueue.play + songs
 					self.downloader.set()
 					embed = discord.Embed(title=title, url=url, description=f"[{len(songs)} queued]")
@@ -157,7 +157,7 @@ class MusicPlayer:
 					
 					val = utils.getServerSetting(self._guild.id, 'nowPlayingAuto')
 					if val:
-						await now_playing(self._guild, ctx.channel, preparing=True)
+						await self.now_playing(ctx.channel, preparing=True)
 					else:
 						embed = discord.Embed(title=title, url=url, description=f"`[{utils.convert_seconds(duration)}]`")
 						embed.set_thumbnail(url=thumbnail)
@@ -177,11 +177,95 @@ class MusicPlayer:
 					
 					val = utils.getServerSetting(self._guild.id, 'nowPlayingAuto')
 					if val:
-						await now_playing(self._guild, ctx.channel)
+						await self.now_playing(ctx.channel)
 					else:
 						embed = discord.Embed(title=title, url=url, description=f"`[{utils.convert_seconds(duration)}]`")
 						embed.set_thumbnail(url=thumbnail)
 						await ctx.send(embed=embed)
+	async def now_playing(self, channel=None, preparing=False, dontSticky = False, forceSticky = False):
+		currentPlayer = self.current
+		msg = self.current_np_message
+
+		if preparing:
+			if self.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
+				nextSong = self.getQueueList(procDefault = True, prepareDefault = True)[0]
+				print(nextSong)
+				embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
+			else:
+				embed = discord.Embed(description="Preparing song...")
+
+			if msg and not forceSticky:
+				await msg.edit(embed=embed)
+				await utils.set_message_reactions(msg, [])
+			else:
+				message = await channel.send(content="Now playing:", embed=embed)
+				self.current_np_message = message
+				self.stop_update_np.set()
+			return
+
+		if currentPlayer == None:
+			if self._guild.voice_client == None:
+				embed = discord.Embed(title="Player stopped")
+			elif self.getQueuedAmount(procDefault = True, prepareDefault = True) > 0:
+				if self.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
+					nextSong = self.getQueueList(procDefault = True, prepareDefault = False)[0]
+					if self.update_np_downloading.is_set():
+						embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Downloading song...")
+					elif self.update_np_normalizing.is_set():
+						embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Normalizing song volume...")
+					else:
+						embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
+				else:
+					embed = discord.Embed(description="Preparing song...")
+			else:
+				embed = discord.Embed(description="There's no song playing")
+			if msg:
+				await msg.edit(embed=embed)
+				await utils.set_message_reactions(msg, [])
+			else:
+				message = await channel.send(content="Now playing:", embed=embed)
+				self.current_np_message = message
+				self.stop_update_np.set()
+			return
+
+		sticky = utils.getServerSetting(self._guild.id, 'nowPlayingSticky')
+		if (not forceSticky) and ( (dontSticky) or (not sticky) or (msg and msg.channel.last_message_id == msg.id) ):
+			em =  msg.embeds[0].description
+			description = utils.create_progressbar(self.timePaused,
+											self.timeStarted,
+											currentPlayer.duration,
+											self._guild.voice_client.is_paused())
+
+			embed = discord.Embed(title=currentPlayer.title, url=currentPlayer.url, description=description)
+			await msg.edit(embed=embed)
+			controls = utils.getServerSetting(self._guild.id, 'nowPlayingControls')
+			if not controls:
+				await utils.set_message_reactions(msg, [])
+			elif em == "There's no song playing" or em == "Preparing song..." or em == "Downloading song..."  or em == "Normalizing song volume..." :
+				await utils.set_message_reactions(msg, ["⏯️", "⏭️", "🔉", "🔊"])
+		else:
+			if msg:
+				channel = msg.channel
+			
+			content = "Now playing:"
+			
+			description = utils.create_progressbar(self.timePaused,
+											self.timeStarted,
+											currentPlayer.duration,
+											self._guild.voice_client.is_paused())
+
+			embed = discord.Embed(title=currentPlayer.title, url=currentPlayer.url, description=description)
+			if msg:
+				await msg.delete()
+			message = await channel.send(content=content, embed=embed)
+			self.current_np_message = message
+			if not msg:
+				self.stop_update_np.set()
+			controls = utils.getServerSetting(self._guild.id, 'nowPlayingControls')
+			if controls:
+				await utils.set_message_reactions(message, ["⏯️", "⏭️", "🔉", "🔊"])
+			else:
+				await utils.set_message_reactions(message, [])
 	async def setVolume(self, newVolume):
 		self.volume = newVolume
 		vc = self._guild.voice_client
@@ -238,13 +322,13 @@ class MusicPlayer:
 					localTimezoneCreatedAt = datetime_from_utc_to_local(message.created_at)
 					if (time.time() - localTimezoneCreatedAt.timestamp()) < 10:
 						await self.stop_update_np.wait()
-						await now_playing(self._guild, dontSticky = True)
+						await self.now_playing(dontSticky = True)
 					else:
 						await self.stop_update_np.wait()
-						await now_playing(self._guild)
+						await self.now_playing()
 			else:
 				await self.stop_update_np.wait()
-				await now_playing(self._guild)
+				await self.now_playing()
 			if self.current == None and self.getQueuedAmount( procDefault = True, prepareDefault = True) == 0:
 				self.stop_update_np.clear()
 	async def downloader_loop(self):
@@ -336,7 +420,7 @@ class MusicPlayer:
 							newList = []
 							for link in data:
 								if "playlist?list=" in link:
-									_, _, links = await get_playlist_info(link)
+									_, _, links = await utils.get_playlist_info(link)
 									newList = newList + links
 								else:
 									newList.append(link)

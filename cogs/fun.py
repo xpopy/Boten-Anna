@@ -27,7 +27,7 @@ async def nekosAPI(ctx, category, message):
 
 async def tenorAPI(ctx, searchTerm, text):
 	# set the apikey and limit
-	apikey = utils.getConfig()['tenor_key']
+	apikey = utils.getConfig('tenor_key')
 	lmt = 20
 
 	# get the top 20 GIFs for the search term

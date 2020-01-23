@@ -4,6 +4,7 @@ import json
 import time
 import os
 from bs4 import BeautifulSoup as bs4Soup
+from subprocess import Popen as subprocPopen, PIPE as subprocPIPE, STDOUT as subprocSTDOUT
 from requests import get as requestGet
 from urllib import parse as urlParse
 
@@ -141,6 +142,28 @@ def getServerPlaylist(server):
 		
 	return playlistCache[server]
 
+def updateServerPlaylist(server, new_value):
+	''' Updates the server playlist '''
+	global playlistCache
+	if type(server) == int:
+		server = str(server)
+
+	if not os.path.exists(playlist_location):
+		initializeJsonFile(playlist_location)
+		
+	with open(playlist_location, 'r+') as json_file:
+		data = json.load(json_file)
+		json_file.seek(0)
+
+		if server not in data:
+			data[server] = {}
+
+		data[server] = new_value
+		json.dump(data, json_file)
+		json_file.truncate()
+		playlistCache = data
+
+
 def representsInt(s):
 	try: 
 		int(s)
@@ -153,12 +176,29 @@ async def set_message_reactions(msg, new_reactions):
 	for reaction in new_reactions:
 		await msg.add_reaction(reaction)
 
+def get_playlist_info_async(url):
+	cmd = ["youtube-dl", "-J", "-i", "--flat-playlist", url]
+	proc = subprocPopen(cmd, stdout=subprocPIPE, stderr=subprocPIPE)
+	o, _ = proc.communicate()
+	data_string = o.decode('ascii')
 
+	data = json.loads(data_string)
+	#print(data)
+	playlist_name = data['title']
+	playlist_url = data['webpage_url']
+	data = data['entries']
+	domain = "https://www.youtube.com/watch?v="
+	urls = []
+	#print(data[0])
+	for video in data:
+		url = domain + video["id"]
+		urls.append(url)
 
+	return (clampTitle(playlist_name), playlist_url, urls)
 
-
-
-
+async def get_playlist_info(url, loop=None):
+	loop = loop or asyncio.get_event_loop()
+	return await loop.run_in_executor(None, lambda: get_playlist_info_async(url))
 
 def isurl(url):
 	#Find the start position of the ID
@@ -253,92 +293,20 @@ def create_progressbar(timePaused, timeStarted, duration, is_paused):
 	description += f" `{songProgress}/{songDuration}`"
 	return description
 
-async def now_playing(guild, channel=None, preparing=False, dontSticky = False, forceSticky = False):
-	mPlayer = get_player(guild)
-	currentPlayer = mPlayer.current
-	msg = mPlayer.current_np_message
+async def joinVoice(ctx):
+	"""joins the requested voice channel, returns true if it did join and false if it can't join"""
+	if not ctx.voice_client:
+		# Bot is not in a channel
+		await ctx.message.author.voice.channel.connect()
+		return True
 
-
-	if preparing:
-		if mPlayer.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
-			nextSong = mPlayer.getQueueList(procDefault = True, prepareDefault = True)[0]
-			print(nextSong)
-			embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
-		else:
-			embed = discord.Embed(description="Preparing song...")
-
-		if msg and not forceSticky:
-			await msg.edit(embed=embed)
-			await set_message_reactions(msg, [])
-		else:
-			message = await channel.send(content="Now playing:", embed=embed)
-			mPlayer.current_np_message = message
-			mPlayer.stop_update_np.set()
-		return
-
-	if currentPlayer == None:
-		if guild.voice_client == None:
-			embed = discord.Embed(title="Player stopped")
-		elif mPlayer.getQueuedAmount(procDefault = True, prepareDefault = True) > 0:
-			if mPlayer.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
-				nextSong = mPlayer.getQueueList(procDefault = True, prepareDefault = False)[0]
-				if mPlayer.update_np_downloading.is_set():
-					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Downloading song...")
-				elif mPlayer.update_np_normalizing.is_set():
-					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Normalizing song volume...")
-				else:
-					embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
-			else:
-				embed = discord.Embed(description="Preparing song...")
-		else:
-			embed = discord.Embed(description="There's no song playing")
-		if msg:
-			await msg.edit(embed=embed)
-			await set_message_reactions(msg, [])
-		else:
-			message = await channel.send(content="Now playing:", embed=embed)
-			mPlayer.current_np_message = message
-			mPlayer.stop_update_np.set()
-		return
-
-	sticky = getServerSetting(guild.id, 'nowPlayingSticky')
-	if (not forceSticky) and ( (dontSticky) or (not sticky) or (msg and msg.channel.last_message_id == msg.id) ):
-		em =  msg.embeds[0].description
-		description = create_progressbar(mPlayer.timePaused,
-										mPlayer.timeStarted,
-										currentPlayer.duration,
-										guild.voice_client.is_paused())
-
-		embed = discord.Embed(title=currentPlayer.title, url=currentPlayer.url, description=description)
-		await msg.edit(embed=embed)
-		controls = getServerSetting(guild.id, 'nowPlayingControls')
-		if not controls:
-			await set_message_reactions(msg, [])
-		elif em == "There's no song playing" or em == "Preparing song..." or em == "Downloading song..."  or em == "Normalizing song volume..." :
-			await set_message_reactions(msg, ["⏯️", "⏭️", "🔉", "🔊"])
+	elif ctx.author.voice.channel == ctx.voice_client.channel:
+		# Bot is in same channel
+		return True
 	else:
-		if msg:
-			channel = msg.channel
-		
-		content = "Now playing:"
-		
-		description = create_progressbar(mPlayer.timePaused,
-										mPlayer.timeStarted,
-										currentPlayer.duration,
-										guild.voice_client.is_paused())
-
-		embed = discord.Embed(title=currentPlayer.title, url=currentPlayer.url, description=description)
-		if msg:
-			await msg.delete()
-		message = await channel.send(content=content, embed=embed)
-		mPlayer.current_np_message = message
-		if not msg:
-			mPlayer.stop_update_np.set()
-		controls = getServerSetting(guild.id, 'nowPlayingControls')
-		if controls:
-			await set_message_reactions(message, ["⏯️", "⏭️", "🔉", "🔊"])
-		else:
-			await set_message_reactions(message, [])
+		# Bot is in another channel
+		await ctx.send('I\'m already playing in the voice channel `{}`, join me!'.format(ctx.voice_client.channel.name))
+		return False
 
 async def bookList(channel, mPlayer, func, playList, itemsPerPage=5):
 	''' Generates a list with pages that you can flip back and forth '''

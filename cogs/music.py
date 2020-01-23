@@ -105,7 +105,7 @@ class Music(commands.Cog):
 			return False
 		await ctx.send("You don't have the required permissions to do that")
 		return False	
-	async def join_voice_and_play(self, ctx):
+	async def joinVoice(self, ctx):
 		"""returns True if we can play a song afterwards"""
 		if ctx.voice_client == None:
 			# Bot is not in a channel
@@ -180,14 +180,14 @@ class Music(commands.Cog):
 		if len(defaultPlaylist) == 0:
 			return await ctx.send("There's no song to be played, either use the play command with a song or add a song to the default playlist")
 
-		if(await join_voice_and_play(ctx)):
+		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			mPlayer.downloader.set()
 			
 			await asyncio.sleep(1)
 			val = utils.getServerSetting(ctx.guild.id, 'nowPlayingAuto')
 			if val:
-				await now_playing(ctx.guild, ctx.channel, preparing=True, forceSticky=True)
+				await mPlayer.now_playing(ctx.channel, preparing=True, forceSticky=True)
 
 	@commands.command(aliases=['play', 'p'])
 	@commands.check(is_accepted_text_channel)
@@ -199,7 +199,7 @@ class Music(commands.Cog):
 			if len(defaultPlaylist) == 0:
 				return await ctx.send("There's no song to be played, either use the command again with a song or add a song to the default playlist")
 
-		if(await join_voice_and_play(ctx)):
+		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			if len(args) > 0:
 				url = " ".join(args)
@@ -210,14 +210,14 @@ class Music(commands.Cog):
 				await asyncio.sleep(1)
 				val = utils.getServerSetting(ctx.guild.id, 'nowPlayingAuto')
 				if val:
-					await now_playing(ctx.guild, ctx.channel, preparing=True, forceSticky=True)
+					await mPlayer.now_playing(ctx.channel, preparing=True, forceSticky=True)
 
 	@commands.command(aliases=['playnext', 'pnext', 'pn'])
 	@commands.check(is_accepted_text_channel)
 	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
 	async def playnext_(self, ctx, *, url):
-		if(await join_voice_and_play(ctx)):
+		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			await mPlayer.add_song(ctx, url, play_next=True, stream=False)
 
@@ -227,7 +227,7 @@ class Music(commands.Cog):
 	@commands.check(is_accepted_voice_channel)
 	@commands.check(is_dj)
 	async def playnow_(self, ctx, *, url):
-		if(await join_voice_and_play(ctx)):
+		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			await mPlayer.add_song(ctx, url, play_now=True, stream=False)
 
@@ -236,7 +236,7 @@ class Music(commands.Cog):
 	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
 	async def stream_(self, ctx, *, url):
-		if(await join_voice_and_play(ctx)):
+		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			await mPlayer.add_song(ctx, url, stream=True)
 
@@ -254,7 +254,7 @@ class Music(commands.Cog):
 	async def clear_playlist(self, ctx):
 		server = str(ctx.guild.id)
 		mPlayer = self.get_player(ctx.guild)
-		await update_playlist_json(server, [])
+		utils.updateServerPlaylist(server, [])
 		mPlayer.prepareQueue.default = []
 		await ctx.send(f"Default playlist cleared.")
 
@@ -264,14 +264,15 @@ class Music(commands.Cog):
 		mPlayer = self.get_player(ctx.guild)
 		searchOrUrl = " ".join(args)
 		if utils.isPlaylist(searchOrUrl): #It's a playlist
-			title, url, songs = await get_playlist_info(searchOrUrl)
+			title, url, songs = await utils.get_playlist_info(searchOrUrl)
 
 			data = utils.getServerPlaylist(server)
 			if url in data:
 				return await ctx.send(f"That playlist is already added")
 
-			await update_playlist_json(server, url, add = True)
+			data.append(url)
 			mPlayer.prepareQueue.default = mPlayer.prepareQueue.default + songs
+			utils.updateServerPlaylist(server, data)
 			shuffle(mPlayer.prepareQueue.default)
 			
 			embed = discord.Embed(title="Playlist: " + title, url=url, description=f"Added playlist with {len(songs)} songs")
@@ -286,7 +287,8 @@ class Music(commands.Cog):
 			if url in data:
 				return await ctx.send(f"That song already exists in the playlist")
 		
-			await update_playlist_json(server, url, add = True)
+			data.append(url)
+			utils.updateServerPlaylist(server, data)
 			mPlayer.prepareQueue.default.append(url)
 			shuffle(mPlayer.prepareQueue.default)
 
@@ -300,13 +302,14 @@ class Music(commands.Cog):
 		mPlayer = self.get_player(ctx.guild)
 		searchOrUrl = " ".join(args)
 		if utils.isPlaylist(searchOrUrl):
-			title, url, songs = await get_playlist_info(searchOrUrl)
+			title, url, songs = await utils.get_playlist_info(searchOrUrl)
 
 			data = utils.getServerPlaylist(server)
 			if not url in data:
 				return await ctx.send(f"That youtube playlist doesn't exist in the playlist")
 
-			await update_playlist_json(server, url, add = False)
+			data.remove(url)
+			utils.updateServerPlaylist(server, data)
 			for song in songs:
 				if song in mPlayer.prepareQueue.default:
 					mPlayer.prepareQueue.default.remove(song)
@@ -323,7 +326,8 @@ class Music(commands.Cog):
 			if not url in data:
 				return await ctx.send(f"That song doesn't exist in the playlist")
 				
-			await update_playlist_json(server, url, add = False)
+			data.remove(url)
+			utils.updateServerPlaylist(server, data)
 			mPlayer.prepareQueue.default.remove(url)
 
 			embed = discord.Embed(title=title, url=url, description=f"have been removed from the playlist")
@@ -502,7 +506,8 @@ class Music(commands.Cog):
 	async def nowplaying_(self, ctx):
 		if ctx.invoked_subcommand is None:
 			if await self.is_bot_connected(ctx):
-				await now_playing(ctx.guild, ctx.channel)
+				mPlayer = self.get_player(ctx.guild)
+				await mPlayer.now_playing(ctx.channel)
 
 	@nowplaying_.command()
 	@commands.check(is_dj)
@@ -687,7 +692,7 @@ class Music(commands.Cog):
 		playlistlist = []
 		for link in data:
 			if "playlist?list=" in link:
-				_, _, links = await get_playlist_info(link)
+				_, _, links = await utils.get_playlist_info(link)
 				playlistlist = playlistlist + links
 			else:
 				playlistlist.append(link)
