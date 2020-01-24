@@ -1,6 +1,7 @@
 # Settings files
 .json
 settings/
+music_cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

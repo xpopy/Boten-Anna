@@ -5,10 +5,12 @@ import sys
 
 import discord
 from discord.ext import commands
+from requests import get as requestGet
 from tendo import singleton
 
 sys.path.append('./cogs')
 import utils
+
 
 
 
@@ -35,7 +37,8 @@ import utils
 
 
 #Only allow one bot to be online at the same time
-me = singleton.SingleInstance() 
+#me = singleton.SingleInstance() 
+
 
 #Folder and File locations
 cogs_folder = 'cogs'
@@ -60,7 +63,6 @@ for filename in os.listdir(f'./{cogs_folder}'):
 	if filename == "utils.py" or filename == "bot.py":
 		continue
 	if filename.endswith('.py'):
-		
 		try:
 			bot.load_extension(f'{cogs_folder}.{filename[:-3]}')
 			print(f'"{filename}" loaded')
@@ -95,14 +97,16 @@ async def on_command_error(ctx, error):
 		raise(error)
 
 
+
 @bot.check
 async def globally_block_dms(ctx):
 	return ctx.guild is not None
 
 @bot.check
 async def log_to_console(ctx):
-	print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
-	return True
+	if not ctx.invoked_subcommand:
+		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
+		return True
 
 
 
@@ -152,6 +156,55 @@ async def reload(ctx, extension = None):
 		returnCode = "restart"
 		await ctx.send("Restarting, brb :D")
 		return await ctx.bot.logout()
+
+@bot.command(aliases=['setpp', 'setprofilepic', 'setprofilepicture'])
+@commands.is_owner()
+async def setprofilepicture_(ctx, url):
+	img_data = requestGet(url).content
+	with open('profilePic.jpg', 'wb') as handler:
+		handler.write(img_data)
+	with open('profilePic.jpg', 'rb') as fp:
+		await bot.user.edit(avatar=fp.read())
+	await ctx.send("New profile picture set, it may take a few seconds for it to update")
+
+@bot.command(aliases=['prefix', 'annaprefix'])
+@commands.has_permissions(administrator=True)
+async def prefix_(ctx, *args):
+	if len(args) == 0:
+		return await ctx.send(f"Current prefix is \"{ await utils.determine_prefix(bot, ctx.message)}\"")
+
+	newPrefix = " ".join(args)
+	if newPrefix.isspace():
+		return await ctx.send(f"The prefix can not be only spaces")
+
+	server = str(ctx.guild.id)
+	await utils.updateServerSettings(server, 'prefix', newPrefix)
+	await ctx.send(f"Changed prefix to \"{newPrefix}\"")
+
+@bot.command()
+@commands.is_owner()
+async def debug(ctx):
+	from pprint import pprint
+	musicCog = bot.get_cog('music')
+	if musicCog is not None:
+		mPlayer = musicCog.get_player(ctx.guild)
+		print("\n\n")
+		for element in dir(mPlayer):
+			if "__" in element:
+				continue
+			print(f"{element}: \t \t{getattr(mPlayer, element)}\n")
+
+#Discord.py generates its own help command, lets remove that to make our own
+bot.remove_command('help')
+@bot.command(aliases=['help', 'commands'])
+async def help_(ctx, *args):
+	argslen = len(args)
+	if argslen == 0:
+		await utils.helpFunction(ctx)
+	elif argslen == 1:
+		await utils.helpFunction(ctx, helpCommand=args[0])
+	else:
+		await ctx.send("Too many arguments")
 
 @bot.command()
 @commands.is_owner()

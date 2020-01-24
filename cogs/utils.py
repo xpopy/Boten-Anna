@@ -1,15 +1,17 @@
-import discord
 import asyncio
 import json
-import time
 import os
-from bs4 import BeautifulSoup as bs4Soup
-from subprocess import Popen as subprocPopen, PIPE as subprocPIPE, STDOUT as subprocSTDOUT
-from requests import get as requestGet
+import time
+from subprocess import PIPE as subprocPIPE
+from subprocess import STDOUT as subprocSTDOUT
+from subprocess import Popen as subprocPopen
 from urllib import parse as urlParse
 
-import ytdl
+import discord
+from bs4 import BeautifulSoup as bs4Soup
+from requests import get as requestGet
 
+import ytdl
 
 configCache = {}
 serverSettingsCache = {}
@@ -90,6 +92,8 @@ def getServerSetting(server, field):
 			json.dump(data, json_file)
 			json_file.truncate()
 			serverSettingsCache = data
+		else:
+			serverSettingsCache = data
 
 	if field not in serverSettingsCache[server]:
 		updateServerSettings(server, field, defaultSettings[field])
@@ -138,6 +142,8 @@ def getServerPlaylist(server):
 			json_file.seek(0)
 			json.dump(data, json_file)
 			json_file.truncate()
+			playlistCache = data
+		else:
 			playlistCache = data
 		
 	return playlistCache[server]
@@ -314,6 +320,8 @@ async def bookList(channel, mPlayer, func, playList, itemsPerPage=5):
 	listIndex = 0
 	queueLength = len(playList)
 	pages = queueLength // itemsPerPage + (queueLength % itemsPerPage > 0)  #rounding up
+	if pages == 0:
+		pages = 1
 
 	leftEmoji = "⬅️"
 	rightEmoji = "➡️"
@@ -590,10 +598,3 @@ async def helpFunction(ctx, helpCommand=None):
 		embed.set_author(name=ctx.bot.user.name + " Help Menu" , icon_url=ctx.bot.user.avatar_url)
 		embed.set_footer(text="Syntax: (x | y): use either x or y, (x): x is optional")
 		await ctx.send(embed=embed)	
-
-
-
-
-
-
-

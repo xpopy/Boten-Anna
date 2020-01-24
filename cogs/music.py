@@ -3,19 +3,67 @@ import sys
 import time
 from random import shuffle
 
-
 import discord
 from discord.ext import commands
 from discord.utils import get
 
 sys.path.append('./cogs')
-import utils
 import player
+import utils
 import ytdl
 
 
 
 
+async def is_accepted_voice_channel(ctx):
+	server = str(ctx.guild.id)
+	if not utils.getServerSetting(server, 'acceptedVoiceChannels'):
+		return True
+	else:
+		if ctx.author.voice.channel.id in utils.getServerSetting(server, 'acceptedVoiceChannels'):
+			return True
+		else:
+			await ctx.send(f"I'm not allowed to join your voice channel")
+			return False
+async def is_accepted_text_channel(ctx):
+	server = str(ctx.guild.id)
+	if not utils.getServerSetting(server, 'acceptedTextChannels'):
+		return True
+	else:
+		return ctx.channel.id in utils.getServerSetting(server, 'acceptedTextChannels')
+async def is_bot_connected(ctx):
+	''' Checks if the bot is connected to a voice channel ''' 
+	if ctx.voice_client is None:
+		await ctx.send("I'm not connected to a voice channel.")
+		return False
+	else:
+		return True
+async def is_user_connected_to_bot_channel(ctx):
+	''' Checks if a user is connecter to the same voice channel as the bot is '''
+	if ctx.author.voice is not None:
+		if ctx.author.voice.channel == ctx.voice_client.channel:
+			return True
+	await ctx.send(f"You have to be in `🔊 {ctx.voice_client.channel.name}` to do that")
+	return False	
+async def is_user_connected(ctx):
+	''' Checks if the user is connected to a voice chanel '''
+	if ctx.author.voice is not None:
+		return True
+	await ctx.send('You have to join a voice channel to do that')
+	return False
+async def is_dj(ctx):
+	'''Checks if the user has the dj_role role'''
+	server = str(ctx.guild.id)
+	if ctx.author.guild_permissions.administrator:
+		return True
+	djRole = get(ctx.guild.roles, id=utils.getServerSetting(server, 'dj_role'))
+	if djRole in ctx.author.roles:
+		return True
+	else:
+		await ctx.send("You don't have the required permissions to do that")
+		return False
+	await ctx.send("You don't have the required permissions to do that")
+	return False	
 
 
 
@@ -55,56 +103,11 @@ class Music(commands.Cog):
 		self.players = {}
 
 
-
-	async def is_accepted_voice_channel(self, ctx):
-		server = str(ctx.guild.id)
-		if not utils.getServerSetting(server, 'acceptedVoiceChannels'):
-			return True
-		else:
-			if ctx.author.voice.channel.id in utils.getServerSetting(server, 'acceptedVoiceChannels'):
-				return True
-			else:
-				await ctx.send(f"I'm not allowed to join your voice channel")
-				return False
-	async def is_accepted_text_channel(self, ctx):
-		server = str(ctx.guild.id)
-		if not utils.getServerSetting(server, 'acceptedTextChannels'):
-			return True
-		else:
-			return ctx.channel.id in utils.getServerSetting(server, 'acceptedTextChannels')
-	async def is_bot_connected(self, ctx):
-		''' Checks if the bot is connected to a voice channel ''' 
-		if ctx.voice_client is None:
-			await ctx.send("I'm not connected to a voice channel.")
-			return False
-		else:
-			return True
-	async def is_user_connected_to_bot_channel(self, ctx):
-		''' Checks if a user is connecter to the same voice channel as the bot is '''
-		if ctx.author.voice is not None:
-			if ctx.author.voice.channel == ctx.voice_client.channel:
-				return True
-		await ctx.send(f"You have to be in `🔊 {ctx.voice_client.channel.name}` to do that")
-		return False	
-	async def is_user_connected(self, ctx):
-		''' Checks if the user is connected to a voice chanel '''
-		if ctx.author.voice is not None:
-			return True
-		await ctx.send('You have to join a voice channel to do that')
-		return False
-	async def is_dj(self, ctx):
-		'''Checks if the user has the dj_role role'''
-		server = str(ctx.guild.id)
-		if ctx.author.guild_permissions.administrator:
-			return True
-		djRole = get(ctx.guild.roles, id=utils.getServerSetting(server, 'dj_role'))
-		if djRole in ctx.author.roles:
-			return True
-		else:
-			await ctx.send("You don't have the required permissions to do that")
-			return False
-		await ctx.send("You don't have the required permissions to do that")
-		return False	
+	
+	
+	def is_connected_player(self, mPlayer):
+		voice_client = get(mPlayer.bot.voice_clients, guild=mPlayer._guild)
+		return voice_client and voice_client.is_connected()
 	async def joinVoice(self, ctx):
 		"""returns True if we can play a song afterwards"""
 		if ctx.voice_client == None:
@@ -122,11 +125,11 @@ class Music(commands.Cog):
 	def get_player(self, guild):
 		"""Retrieve the guild player, or generate one."""
 		try:
-			player = self.players[guild.id]
+			mPlayer = self.players[guild.id]
 		except KeyError:
-			player = player.MusicPlayer(self.bot, guild)
-			self.players[guild.id] = player
-		return player
+			mPlayer = player.MusicPlayer(self.bot, guild)
+			self.players[guild.id] = mPlayer
+		return mPlayer
 	def create_playlist_string(self, mPlayer, playlist, startIndex, itemsPerPage):
 		description = ""
 		if len(playlist) == 0:
@@ -169,7 +172,69 @@ class Music(commands.Cog):
 					+ f' [{song.title}]({song.url})'
 					+ '\n')
 		return description
-	
+	def snapVolumeToSteps(self, volume, increase=True):
+		volume_steps = [0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.22, 0.3, 0.4, 0.55, 0.8, 1, 1.25, 1.5]
+		closestToCurrent = min(volume_steps, key=lambda x:abs(x-volume)) 
+		if increase:
+			newVolumeIndex = volume_steps.index(closestToCurrent) + 1
+		else:
+			newVolumeIndex = volume_steps.index(closestToCurrent) - 1
+		
+		new_index = sorted((0, newVolumeIndex, len(volume_steps)-1 ))[1]
+		return volume_steps[new_index]
+	async def handleNPReactions(self, reaction, user, mPlayer):
+		''' Handles the Now Playing message reactions '''
+		vc = reaction.message.guild.voice_client
+		await reaction.remove(user)
+
+		if (not user.voice) or user.voice.channel != vc.channel:
+			#Only users in the same voice channel can use reactions
+			return
+
+		if reaction.emoji == "⏭️":
+			if vc and vc.source:	
+				vc.source.volume = 0
+				vc.stop()
+				await reaction.message.edit(content=f"{user.mention} skipped a song")
+
+		elif reaction.emoji == "⏯️":
+			if vc.is_paused():
+				vc.resume()
+				mPlayer.timeStarted = time.time() - mPlayer.timePaused
+				await reaction.message.edit(content=f"{user.mention} resumed the player")
+			else:
+				vc.pause()
+				mPlayer.timePaused = time.time() - mPlayer.timeStarted
+				await reaction.message.edit(content=f"{user.mention} paused the player")
+			mPlayer.update_np.set()
+		
+		elif reaction.emoji == "🔉":
+			newVolume = self.snapVolumeToSteps(mPlayer.volume, increase=False)
+			await mPlayer.setVolume(newVolume)
+			await reaction.message.edit(content=f"{user.mention} lowered the volume to `{round(newVolume*100)}`")
+		
+		elif reaction.emoji == "🔊":
+			newVolume = self.snapVolumeToSteps(mPlayer.volume, increase=True)
+			await mPlayer.setVolume(newVolume)
+			await reaction.message.edit(content=f"{user.mention} increased the volume to `{round(newVolume*100)}`")
+
+	@commands.Cog.listener()
+	async def on_voice_state_update(self, member, before, after):
+		mPlayer = self.get_player(member.guild)
+		if self.is_connected_player(mPlayer):
+			vc = get(self.bot.voice_clients, guild=member.guild)
+			if len(vc.channel.members) == 1 and vc.channel.members[0] == self.bot.user:
+				mPlayer.stop_player = True
+				vc.stop()
+
+	@commands.Cog.listener()
+	async def on_reaction_add(self, reaction, user):
+		if user == self.bot.user or reaction.message.author != self.bot.user:
+			return
+			
+		mPlayer = self.get_player(reaction.message.guild)
+		if mPlayer.current_np_message and mPlayer.current_np_message.id == reaction.message.id:
+			await self.handleNPReactions(reaction, user, mPlayer)
 
 	@commands.command(aliases=['join', 'j'])
 	@commands.check(is_accepted_text_channel)
@@ -250,6 +315,45 @@ class Music(commands.Cog):
 			defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
 			await utils.bookList(ctx.channel, mPlayer, self.create_playlist_string, defaultPlaylist, itemsPerPage=10)
 	
+	@playlist_.command(aliases=['download'])
+	async def download_playlist(self, ctx):
+		mPlayer = self.get_player(ctx.guild)
+
+		server = str(mPlayer._guild.id)
+		data = utils.getServerPlaylist(server)
+		if not data:
+			return await ctx.send(content="There's no songs in the default playlist")
+
+		print("downloading default playlist")
+		playlistlist = []
+		for link in data:
+			if "playlist?list=" in link:
+				_, _, links = await utils.get_playlist_info(link)
+				playlistlist = playlistlist + links
+			else:
+				playlistlist.append(link)
+
+		await ctx.send(content=f"Downloading {len(playlistlist)} songs from default playlist, this might take a while...")
+					
+		print("downloading default")
+		msg = await ctx.send(content=f"`0/{len(playlistlist)} songs downloaded`")
+		for i, url in enumerate(playlistlist, 1):
+			skip = False
+			for song in mPlayer.processedQueue:
+				if song.url == url:
+					#Song is already in queue, no need to download it again so just duplicate the object
+					skip = True
+			if skip:
+				continue
+
+			print(f"{i}/{len(playlistlist)} downloading: " + url)
+			await ytdl.YTDLSource.from_url(mPlayer, url, loop=self.bot.loop, stream=False)
+			if i%2:
+				await msg.edit(content = f"`{i}/{len(playlistlist)} songs downloaded`")
+
+		await msg.edit(content = f"`{len(playlistlist)}/{len(playlistlist)} songs downloaded`")
+		await ctx.send("Finished downloading and preparing the default playlist")
+
 	@playlist_.command(aliases=['clear'])
 	async def clear_playlist(self, ctx):
 		server = str(ctx.guild.id)
@@ -263,6 +367,10 @@ class Music(commands.Cog):
 		server = str(ctx.guild.id)
 		mPlayer = self.get_player(ctx.guild)
 		searchOrUrl = " ".join(args)
+		if not searchOrUrl:
+			prefix = await utils.determine_prefix(self.bot, ctx.message)
+			return await ctx.send(f"Missing arguments, check `{prefix}help playlist`")
+
 		if utils.isPlaylist(searchOrUrl): #It's a playlist
 			title, url, songs = await utils.get_playlist_info(searchOrUrl)
 
@@ -279,9 +387,10 @@ class Music(commands.Cog):
 			await ctx.send(embed=embed)
 		else: #It's either a bunch of words or an url
 			try:
-				title, url, thumbnail, _ = await get_song_data(searchOrUrl)
+				title, url, thumbnail, _ = await utils.get_song_data(searchOrUrl)
 			except:
-				await ctx.send(f"Wrong arguments, check `{await utils.determine_prefix(self.bot, ctx.message)}help playlist`")
+				prefix = await utils.determine_prefix(self.bot, ctx.message)
+				return await ctx.send(f"Wrong arguments, check `{prefix}help playlist`")
 			
 			data = utils.getServerPlaylist(server)
 			if url in data:
@@ -318,9 +427,9 @@ class Music(commands.Cog):
 			await ctx.send(embed=embed)
 		else:
 			try:
-				title, url, thumbnail, _ = await get_song_data(searchOrUrl)
+				title, url, thumbnail, _ = await utils.get_song_data(searchOrUrl)
 			except:
-				await ctx.send(f"Wrong arguments, check `{await utils.determine_prefix(self.bot, ctx.message)}help playlist`")
+				return await ctx.send(f"Wrong arguments, check `{await utils.determine_prefix(self.bot, ctx.message)}help playlist`")
 
 			data = utils.getServerPlaylist(server)
 			if not url in data:
@@ -328,7 +437,8 @@ class Music(commands.Cog):
 				
 			data.remove(url)
 			utils.updateServerPlaylist(server, data)
-			mPlayer.prepareQueue.default.remove(url)
+			if url in mPlayer.prepareQueue.default:
+				mPlayer.prepareQueue.default.remove(url)
 
 			embed = discord.Embed(title=title, url=url, description=f"have been removed from the playlist")
 			embed.set_thumbnail(url=thumbnail)
@@ -505,7 +615,7 @@ class Music(commands.Cog):
 	@commands.check(is_accepted_text_channel)
 	async def nowplaying_(self, ctx):
 		if ctx.invoked_subcommand is None:
-			if await self.is_bot_connected(ctx):
+			if await is_bot_connected(ctx):
 				mPlayer = self.get_player(ctx.guild)
 				await mPlayer.now_playing(ctx.channel)
 
@@ -676,49 +786,6 @@ class Music(commands.Cog):
 			await ctx.send(f"I've removed {channel.mention} from the allowed voice channels")
 		else:
 			await ctx.send(f"That channel is not an allowed voice channel")
-
-
-	@commands.command(aliases=['download_default_playlist'])
-	@commands.check(is_dj)
-	async def download_default_playlist_(self, ctx):
-		mPlayer = self.get_player(ctx.guild)
-
-		server = str(mPlayer._guild.id)
-		data = utils.getServerPlaylist(server)
-		if not data:
-			return await ctx.send(content="There's no songs in the default playlist")
-
-		print("downloading default playlist")
-		playlistlist = []
-		for link in data:
-			if "playlist?list=" in link:
-				_, _, links = await utils.get_playlist_info(link)
-				playlistlist = playlistlist + links
-			else:
-				playlistlist.append(link)
-
-		await ctx.send(content=f"Downloading {len(playlistlist)} songs from default playlist, this might take a while...")
-					
-		print("downloading default")
-		msg = await ctx.send(content=f"`0/{len(playlistlist)} songs downloaded`")
-		for i, url in enumerate(playlistlist, 1):
-			skip = False
-			for song in mPlayer.processedQueue:
-				if song.url == url:
-					#Song is already in queue, no need to download it again so just duplicate the object
-					skip = True
-			if skip:
-				continue
-
-			print(f"{i}/{len(playlistlist)} downloading: " + url)
-			await ytdl.YTDLSource.from_url(mPlayer, url, loop=self.bot.loop, stream=False)
-			if i%2:
-				await msg.edit(content = f"`{i}/{len(playlistlist)} songs downloaded`")
-
-		await msg.edit(content = f"`{len(playlistlist)}/{len(playlistlist)} songs downloaded`")
-		await ctx.send("Finished downloading and preparing the default playlist")
-		
-
 
 
 	

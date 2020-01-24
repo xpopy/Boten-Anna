@@ -1,17 +1,18 @@
 import asyncio
-import discord
 import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from random import shuffle
 
+import discord
 from async_timeout import timeout
 from discord.utils import get
 
 sys.path.append('./cogs')
 import utils
 import ytdl
+
 
 
 time_to_wait_between_songs = 0
@@ -28,9 +29,6 @@ def datetime_from_utc_to_local(utc_datetime):
 	now_timestamp = time.time()
 	offset = datetime.fromtimestamp(now_timestamp) - datetime.utcfromtimestamp(now_timestamp)
 	return utc_datetime + offset
-
-
-
 
 
 
@@ -189,7 +187,6 @@ class MusicPlayer:
 		if preparing:
 			if self.getQueuedAmount(procDefault = True, prepareDefault = False) > 0:
 				nextSong = self.getQueueList(procDefault = True, prepareDefault = True)[0]
-				print(nextSong)
 				embed = discord.Embed(title=nextSong.title, url=nextSong.url, description="Preparing song...")
 			else:
 				embed = discord.Embed(description="Preparing song...")
@@ -271,7 +268,7 @@ class MusicPlayer:
 		vc = self._guild.voice_client
 		if vc != None and vc.source != None:
 			vc.source.volume = newVolume
-		await utils.updateServerSettings(self._guild.id, 'volume', float(newVolume))
+		utils.updateServerSettings(self._guild.id, 'volume', float(newVolume))
 	def getQueuedAmount(self, procDefault = True, prepareDefault = False):
 		amount = 0
 

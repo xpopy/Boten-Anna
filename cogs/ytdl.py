@@ -1,6 +1,7 @@
 import asyncio
-import sys
 import os
+import sys
+
 from concurrent import futures as concurFuture
 from functools import partial
 from glob import glob as globglob
@@ -14,6 +15,8 @@ from youtube_dl import utils as youtubeUtils
 
 sys.path.append('./cogs')
 import utils
+
+
 
 
 
@@ -148,8 +151,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		
 	@classmethod
 	async def from_url(cls, mPlayer, url, *, loop=None, stream=False):
+		loop = loop or asyncio.get_event_loop()
 		ytID = getYTid(url)
-		existingFiles = globglob(f"/music_cache/youtube-{ytID}.*")
+		existingFiles = globglob(f"./music_cache/youtube-{ytID}.*")
 		if existingFiles:
 			return cls(discord.FFmpegPCMAudio(existingFiles[0], **ffmpeg_options))
 
@@ -157,8 +161,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		if not mPlayer.current:
 			mPlayer.update_np.set()
 
-		loop = loop or asyncio.get_event_loop()
-		data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+		with concurFuture.ThreadPoolExecutor() as executor:
+			to_run = partial(ytdl.extract_info, url, download=not stream)
+			data = await loop.run_in_executor(executor, to_run)
 
 		mPlayer.update_np_downloading.clear()
 		if not data:
@@ -175,9 +180,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
 			mPlayer.update_np.set()
 
 		if not stream:
-			with concurFuture.ProcessPoolExecutor() as pool:
+			with concurFuture.ThreadPoolExecutor() as executor:
 				to_run = partial(normalizeAudio, filename)
-				newfilename = await loop.run_in_executor(pool, to_run)
+				newfilename = await loop.run_in_executor(executor, to_run)
 			filename = newfilename
 
 		mPlayer.update_np_normalizing.clear()
