@@ -135,7 +135,9 @@ class MusicPlayer:
 					await ctx.send(embed=embed)
 
 			else:
+				print(url)
 				title, url, thumbnail, duration = await utils.get_song_data(url)
+				print(url)
 
 				songObj = Song(title=title, url=url, thumbnail=thumbnail, duration=duration, requester=ctx.author.mention)
 
@@ -343,7 +345,7 @@ class MusicPlayer:
 
 			#print("checking for something to download")
 			if self.prepareQueue.playnow:
-				print("downloading playnow")
+				#print("downloading playnow")
 				songObj = self.prepareQueue.playnow[0]
 				await self.prepareYTSource(songObj)
 				if self.prepareQueue.playnow and self.prepareQueue.playnow[0] == songObj:
@@ -359,7 +361,7 @@ class MusicPlayer:
 				self._guild.voice_client.stop()
 
 			elif self.prepareQueue.playnext:
-				print("downloading playnext")
+				#print("downloading playnext")
 				songObj = self.prepareQueue.playnext[0]
 				await self.prepareYTSource(songObj)
 				if self.prepareQueue.playnext and self.prepareQueue.playnext[0] == songObj:
@@ -374,7 +376,7 @@ class MusicPlayer:
 			elif len(self.processedQueue.getQueue()) < max_processed_songs:
 
 				if self.prepareQueue.play:
-					print("downloading song")
+					#print("downloading song")
 					songObj = self.prepareQueue.play[0]
 					await self.prepareYTSource(songObj)
 					if self.prepareQueue.play and self.prepareQueue.play[0] == songObj:
@@ -389,7 +391,7 @@ class MusicPlayer:
 				elif len(self.processedQueue) < max_processed_songs:
 
 					if self.prepareQueue.default:
-						print("downloading default")
+						#print("downloading from default playlist")
 						url = self.prepareQueue.default[0]
 						self.prepareQueue.default = self.prepareQueue.default[1:] + self.prepareQueue.default[:1]
 						songObj = Song(title="temp", url=url,
@@ -413,7 +415,7 @@ class MusicPlayer:
 						server = str(self._guild.id)
 						data = utils.getServerPlaylist(server)
 						if data:
-							print("preparing default")
+							#print("preparing default playlist")
 							newList = []
 							for link in data:
 								if "playlist?list=" in link:
@@ -429,15 +431,15 @@ class MusicPlayer:
 							continue
 
 						else:
-							print("nothing to download, waiting")
+							#print("nothing to download, waiting")
 							await self.downloader.wait()
 							self.downloader.clear()
 				else:
-					print("filled list, waiting")
+					#print("filled queue, waiting")
 					await self.downloader.wait()
 					self.downloader.clear()
 			else:
-				print("filled list, waiting")
+				#print("filled queue, waiting")
 				await self.downloader.wait()
 				self.downloader.clear()
 
@@ -532,3 +534,8 @@ class MusicPlayer:
 
 		self.stop_update_np.set()
 		#remove_player(guild)
+
+
+def setup(bot):
+	#Don't actually want to add this as a cog to the bot as it's imported through music.py
+	return True

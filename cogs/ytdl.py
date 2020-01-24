@@ -188,3 +188,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		mPlayer.update_np_normalizing.clear()
 
 		return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options))
+
+
+
+def setup(bot):
+	#Don't actually want to add this as a cog to the bot as it's imported instead
+	return True

@@ -11,31 +11,6 @@ from tendo import singleton
 sys.path.append('./cogs')
 import utils
 
-
-
-
-#TODO: maybe move getDefaultPlaylist, getPlayer etc to another player.py?
-#TODO: maybe use threads for updating files
-
-#TODO: add restart/reload to help commands
-
-#TODO: commands to add:
-	# github
-	# stats: time up, servers, amount of members in servers, etc
-	# uptime
-	# invite
-
-#TODO: create extension list and run only those
-		# remove the if checks for bot.py and utils.py
-
-#TODO:
-#	getServerPlaylist
-#	get_playlist_json
-#	getDefaultPlaylist
-
-
-
-
 #Only allow one bot to be online at the same time
 #me = singleton.SingleInstance() 
 

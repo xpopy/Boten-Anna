@@ -1,0 +1,54 @@
+
+#TODO: maybe use threads for updating files
+
+#TODO: add restart/reload to help commands
+
+#TODO: commands to add:
+	# github
+	# stats: time up, servers, amount of members in servers, etc
+	# uptime
+	# invite
+
+#TODO: if a songs audio levels are close enough then don't normalize it
+#TODO: create extension list and run only those
+		# remove the if checks for bot.py and utils.py
+
+#TODO: check if cogs folder exists
+	# also check for bot.py and maybe utils.py
+#TODO: test restart when using pipenv
+	#TODO: might have to replace the command and run the run.bat instead
+
+
+#TODO: !stop doesn't stop the player when preparing a song
+#TODO: add a command to limit normalization to either on, only default playlist, or off.
+	#TODO: Maybe default to off and only allow creator to allow it on any server they want
+#TODO: when restarting and shutting down, make sure to stop all processes
+
+#TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
+	#TODO: Allows for seeking, set_eq
+#TODO: replace prints with some sort of logging
+#TODO: typing in !play/!pause will make the np message sticky instantly
+#TODO: maybe place player and downloader in a try catch loop so that it doesn't crash when an issue happens
+#TODO: Check if ffmpeg is installed in initialization
+
+#TODO: Write a short comment on what functions do
+#TODO: read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
+	#TODO: show subscommands in the main help menu
+	#TODO: maybe rewrite help as a dictionary with categories, commands, short description and a long description
+	#TODO: https://i.imgur.com/L2Z3IYo.png
+	#TODO: Move it to initialize so it doesn't have to create it every time we want to check help
+#TODO: re-enable playing playlists
+	#TODO: best would probably be to webscrape the playlist to get all info
+	#TODO: --playlist-random  may help
+	#TODO: maybe make it like default playlist, a queue of urls
+		#TODO: shuffle?
+#TODO: is typing is bugged
+#TODO: check if youtube playlist has a "last edited" field so i can save the playlist and not update it all the time
+	#TODO: maybe rework saving playlists so it saves names (name of playlist), time etc?
+	#TODO: set this once done    prepareDefault = True   in   nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = False)[0]
+
+#TODO: add undo: https://github.com/pckv/pcbot/blob/master/plugins/music.py
+#TODO: play youtube radio
+#TODO: play streams
+#TODO: soundcloud (apparently youtubedl already supports it, look it up
+

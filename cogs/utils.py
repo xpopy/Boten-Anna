@@ -221,6 +221,7 @@ def clampTitle(title):
 def get_song_data_async(url):
 	""" gets url, title, amounts of songs or the thumbnail of either a playlist or a single song"""		
 	if isurl(url):
+		print("is url")
 		data = ytdl.ytdl.extract_info(url, download=False)
 		if 'entries' in data:
 			data = data['entries'][0] 
@@ -229,12 +230,21 @@ def get_song_data_async(url):
 		#faster but only works for search
 		query_string = urlParse.urlencode({"search_query" : url})
 		text = requestGet("https://www.youtube.com/results?" + query_string).text
+		
 		soup = bs4Soup(text, features="html.parser")
 
-		div = soup.select(".yt-lockup-dismissable")[0]
-		if div.select(".yt-lockup-playlist-item"):
-			#It's a playlist, we don't support playing it like this
-			return (None, None, None, None)
+		f= open("error.txt","w+")
+		f.write(text)
+		f.close() 
+
+
+		divs = soup.select(".yt-lockup-dismissable")
+		for element in divs:
+			if element.select(".yt-lockup-playlist-item"):
+				#It's a playlist, we don't support playing it like this
+				continue
+			else:
+				div = element
 
 
 		img0 = div.select(".yt-lockup-thumbnail img")[0]
