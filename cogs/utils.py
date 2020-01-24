@@ -221,7 +221,6 @@ def clampTitle(title):
 def get_song_data_async(url):
 	""" gets url, title, amounts of songs or the thumbnail of either a playlist or a single song"""		
 	if isurl(url):
-		print("is url")
 		data = ytdl.ytdl.extract_info(url, download=False)
 		if 'entries' in data:
 			data = data['entries'][0] 
@@ -233,11 +232,9 @@ def get_song_data_async(url):
 		
 		soup = bs4Soup(text, features="html.parser")
 
-		f= open("error.txt","w+")
-		f.write(text)
-		f.close() 
+		
 
-
+		div = None
 		divs = soup.select(".yt-lockup-dismissable")
 		for element in divs:
 			if element.select(".yt-lockup-playlist-item"):
@@ -245,7 +242,10 @@ def get_song_data_async(url):
 				continue
 			else:
 				div = element
+				break
 
+		if not div:
+			raise Exception("No videos found, possible youtube error or class change") 
 
 		img0 = div.select(".yt-lockup-thumbnail img")[0]
 		a0 = div.select(".yt-lockup-title a")[0]

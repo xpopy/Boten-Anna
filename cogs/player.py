@@ -135,9 +135,7 @@ class MusicPlayer:
 					await ctx.send(embed=embed)
 
 			else:
-				print(url)
 				title, url, thumbnail, duration = await utils.get_song_data(url)
-				print(url)
 
 				songObj = Song(title=title, url=url, thumbnail=thumbnail, duration=duration, requester=ctx.author.mention)
 
