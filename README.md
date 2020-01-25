@@ -3,17 +3,17 @@ A discord bot written in python
 
 
 # Installation (Windows)
-1. Install python 3.8.1:
+1. Download the bot, either as a zip (unzip it where you want it) or clone it
+
+2. Install python 3.8.1:
 
    1. Go to https://www.python.org/downloads/release/python-381/ and download "Windows x86-64 executable installer"
 
    2. Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
 
-2. Download the bot, either as a zip (unzip it where you want it) or clone it
-
 3. Install Pipenv:
     
-    1. Open up a command prompt or powershell in the new folder (shift rightclick the folder > open powershell window here)
+    1. Open up a command prompt or powershell in the bot folder (shift rightclick the folder > open powershell window here)
 
     2. `pip install pipenv`: Installs pipenv
 
@@ -58,22 +58,9 @@ A discord bot written in python
 
 
 # Running
-1. Run the file called "Run.bat"
+Run the file called "Run.bat"
 
 
 # Inviting
-1. In order to invite your new bot to your own discord server, open up https://discordapp.com/developers/applications, select your bot, go to the OAuth2 tab, hit the "Bot" checkmarker and down below select the permissions:
-  ```
-  Send Messages
-  Manage Messages
-  Embed Links
-  Read Message History
-  Use External Emojis
-  Add Reactions
-  Connect
-  Speak
-  ```
-
-2. Then right above the permissions there's a long link, click on the copy button and paste it in your browser, voila!
-   You might want to save that link as that's the only way you can invite your bot to other servers (or you'll have to make a new link every time)
+When you start the bot it will print an invite link, copy paste it in your browser and add the bot to your server
 

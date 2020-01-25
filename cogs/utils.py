@@ -388,25 +388,38 @@ async def helpFunction(ctx, helpCommand=None):
 					"shuffle",
 					"clear",
 					"setdj",
-					"prefix",
 					"musictc",
 					"musicvc",
 					'download_default_playlist']
+	adminCommandList = ["load",
+						"unload",
+						"reload",
+						"setprofilepic",
+						"prefix",
+						"shutdown"]
 
 	if not helpCommand:
 		#no helpCommand which means show the whole help message
 		prefix = await determine_prefix(ctx.bot, ctx.message)
 		description = ""
 		description += f"Current prefix is: `{prefix}`\n\n"
+
 		description += f"__**Fun commands**__ \n"
 		for command in funCommandList:
 			description += command + "\n"
+
 		description += f"\n__**Music commands**__ \n"
 		for command in commandList:
 			description += command + "\n"
+
 		description += "\n__**DJ commands**__ \n"
 		for command in djcommandList:
 			description += command + "\n"
+
+		description += "\n__**Admin commands**__ \n"
+		for command in adminCommandList:
+			description += command + "\n"
+
 		description += f"\nUse `{prefix}help (command)` for more info on that command"
 		embed = discord.Embed(title="Help", description=description)
 		await ctx.send(embed=embed)	
@@ -415,7 +428,7 @@ async def helpFunction(ctx, helpCommand=None):
 		#helpCommand might be a list of aliases, check which one is the correct command and assign that
 		if isinstance(helpCommand, list):
 			for alias in helpCommand:
-				if alias in funCommandList + commandList + djcommandList:
+				if alias in funCommandList + commandList + djcommandList + adminCommandList:
 					helpCommand = alias
 					break
 
@@ -423,7 +436,7 @@ async def helpFunction(ctx, helpCommand=None):
 		commandSyntax = "`Syntax: " + prefix
 		description = ""
 
-		if helpCommand not in funCommandList + commandList + djcommandList:
+		if helpCommand not in funCommandList + commandList + djcommandList + adminCommandList:
 			return await ctx.send(f"Either that command doesn't exist or you're using an alias, try the full command name found in {prefix}help")
 
 		if helpCommand == "8ball":
@@ -576,12 +589,6 @@ async def helpFunction(ctx, helpCommand=None):
 			commandSyntax += "leave"
 			description += "Stops the player and leaves the voice channel"
 		
-		elif helpCommand == "prefix":
-			commandSyntax += "(prefix | annaprefix) new_prefix"
-			description += "Sets a new prefix\n\n"
-			description += f"Use `{prefix}annaprefix` if another bot is using the same prefix as me\n"
-			description += f"Encapsulate the new prefix with quote marks if you want the prefix to end with a space like this `\"! \"` \n"
-
 		elif helpCommand == "musictc":
 			commandSyntax += "musictc (clear | add (#channel | current) | remove (#channel | current))"
 			description += "Limits the bot to only read music commands from specific textchannels\n\n"
@@ -600,9 +607,37 @@ async def helpFunction(ctx, helpCommand=None):
 			description += f"**Example:** `{prefix}musicvc add current` adds the voicechannel you're currently in \n"
 			description += f"**Example:** `{prefix}musicvc remove 653341521223090183` removes the channel with the ID \"653341521223090183\"\n"
 			description += f"**Example:** `{prefix}musicvc clear` will make the bot able to join all channels again"
+		
 		elif helpCommand == "download_default_playlist":
 			commandSyntax += "download_default_playlist"
 			description += "Downloads all songs that are in the default playlist and prepares them so that next time you play it will be instant"
+		
+		elif helpCommand == "prefix":
+			commandSyntax += "(prefix | annaprefix) new_prefix"
+			description += "Sets a new prefix\n\n"
+			description += f"Use `{prefix}annaprefix` if another bot is using the same prefix as me\n"
+			description += f"Encapsulate the new prefix with quote marks if you want the prefix to end with a space like this `\"! \"` \n"
+
+		elif helpCommand == "load":
+			commandSyntax += "load module"
+			description += "Loads the module named module.py"
+
+		elif helpCommand == "unload":
+			commandSyntax += "unload module"
+			description += "Unload the module named module.py"
+		
+		elif helpCommand == "reload":
+			commandSyntax += "reload (module)"
+			description += "Reload the module named module.py, if no module is provided, then it will restart the bot"
+		
+		elif helpCommand == "setprofilepic":
+			commandSyntax += "setprofilepic url"
+			description += "Sets the profile picture of the bot to the provided url (has to be an image url)"
+
+		elif helpCommand == "shutdown":
+			commandSyntax += "shutdown"
+			description += "Shuts down the bot"
+		
 		commandSyntax += "`\n\n"
 		embed = discord.Embed(description=commandSyntax + description)
 		embed.set_author(name=ctx.bot.user.name + " Help Menu" , icon_url=ctx.bot.user.avatar_url)

@@ -132,7 +132,7 @@ async def reload(ctx, extension = None):
 		await ctx.send("Restarting, brb :D")
 		return await ctx.bot.logout()
 
-@bot.command(aliases=['setpp', 'setprofilepic', 'setprofilepicture'])
+@bot.command(aliases=['setprofilepic'])
 @commands.is_owner()
 async def setprofilepicture_(ctx, url):
 	img_data = requestGet(url).content
@@ -155,6 +155,16 @@ async def prefix_(ctx, *args):
 	server = str(ctx.guild.id)
 	await utils.updateServerSettings(server, 'prefix', newPrefix)
 	await ctx.send(f"Changed prefix to \"{newPrefix}\"")
+
+
+@bot.command()
+async def github(ctx):
+	await ctx.send("Here you can find the official github repository for this bot: https://github.com/xpopy/Boten-Anna")
+
+@bot.command()
+async def invite(ctx):
+	await ctx.send(utils.getConfig('inviteLink'))
+
 
 @bot.command()
 @commands.is_owner()
@@ -195,6 +205,9 @@ async def on_ready():
 	print(bot.user.id)
 	print()
 
+	if not bot.guilds:
+		print("The bot haven't joined any servers, copy the link below and add the bot to your server to get started\n"
+			 		+ f"https://discordapp.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=3501120&scope=bot")
 
 def run():
 	try:

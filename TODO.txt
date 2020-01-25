@@ -1,27 +1,21 @@
+#TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
+
 
 #TODO: maybe use threads for updating files
 
-#TODO: add restart/reload to help commands
-
 #TODO: commands to add:
-	# github
 	# stats: time up, servers, amount of members in servers, etc
 	# uptime
-	# invite
+	#TODO: add a command to limit normalization to either on, only default playlist, or off.
+		#TODO: Maybe default to off and only allow creator to allow it on any server they want
 
 #TODO: if a songs audio levels are close enough then don't normalize it
-#TODO: create extension list and run only those
-		# remove the if checks for bot.py and utils.py
 
-#TODO: check if cogs folder exists
-	# also check for bot.py and maybe utils.py
 #TODO: test restart when using pipenv
 	#TODO: might have to replace the command and run the run.bat instead
 
 
 #TODO: !stop doesn't stop the player when preparing a song
-#TODO: add a command to limit normalization to either on, only default playlist, or off.
-	#TODO: Maybe default to off and only allow creator to allow it on any server they want
 #TODO: when restarting and shutting down, make sure to stop all processes
 
 #TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
