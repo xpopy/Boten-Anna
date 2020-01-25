@@ -58,12 +58,8 @@ A discord bot written in python
 
 
 # Running
-1. Open up a terminal in the installation folder and type `pipenv run python "run.py"`
-2. Alternatively you can create a file called "Run.bat" and inside of it you paste:
-```
-pipenv run python "run.py"
-pause
-```
+1. Run the file called "Run.bat"
+
 
 # Inviting
 1. In order to invite your new bot to your own discord server, open up https://discordapp.com/developers/applications, select your bot, go to the OAuth2 tab, hit the "Bot" checkmarker and down below select the permissions:
