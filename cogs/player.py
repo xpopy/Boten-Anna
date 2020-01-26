@@ -449,12 +449,16 @@ class MusicPlayer:
 
 			await self.playNext.wait()
 			self.playNext.clear()
-		
+
 			# Wait for the next song. If we timeout cancel the player and disconnect
 			try:
 				async with timeout(time_wait_diconnect_emtpy_playlist):
 					while(True):
-						if self.processedQueue.playnow:
+						if self.stop_player:
+							await self.destroy(self._guild) 
+							await self.playNext.wait()
+							self.playNext.clear()
+						elif self.processedQueue.playnow:
 							songObj = self.processedQueue.playnow.pop(0)
 							break
 						elif self.prepareQueue.playnow:
@@ -521,15 +525,13 @@ class MusicPlayer:
 		songObj.source = await ytdl.YTDLSource.from_url(self, songObj.url, loop=self.bot.loop, stream=False)
 	async def destroy(self, guild):
 		"""Disconnect and cleanup the player."""
+		if guild.voice_client:
+			guild.voice_client.stop()
+			await guild.voice_client.disconnect()
 		self.current = None
 		self.stop_player = False
 		self.prepareQueue = SongQueue()
 		self.processedQueue = SongQueue()
-
-		if guild.voice_client:
-			guild.voice_client.stop()
-			await guild.voice_client.disconnect()
-
 		self.stop_update_np.set()
 		#remove_player(guild)
 

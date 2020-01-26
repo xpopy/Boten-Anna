@@ -18,9 +18,6 @@ import utils
 
 
 
-
-
-
 ffmpeg_options = {
 	'options': '-vn'
 }

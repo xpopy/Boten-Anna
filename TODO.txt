@@ -1,11 +1,9 @@
 #TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
 
 
-#TODO: maybe use threads for updating files
+#TODO: maybe use threads for updating files https://stackoverflow.com/a/35240362
 
 #TODO: commands to add:
-	# stats: time up, servers, amount of members in servers, etc
-	# uptime
 	#TODO: add a command to limit normalization to either on, only default playlist, or off.
 		#TODO: Maybe default to off and only allow creator to allow it on any server they want
 
@@ -14,8 +12,6 @@
 #TODO: test restart when using pipenv
 	#TODO: might have to replace the command and run the run.bat instead
 
-
-#TODO: !stop doesn't stop the player when preparing a song
 #TODO: when restarting and shutting down, make sure to stop all processes
 
 #TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player

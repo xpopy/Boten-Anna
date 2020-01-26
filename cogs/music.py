@@ -688,6 +688,7 @@ class Music(commands.Cog):
 	async def leave_(self, ctx):
 		mPlayer = self.get_player(ctx.guild)
 		mPlayer.stop_player = True
+		mPlayer.playNext.set()
 		mPlayer._guild.voice_client.stop()
 
 

@@ -1,19 +1,15 @@
-import asyncio
-import json
 import os
 import sys
+import json
+import time
+import asyncio
 
 import discord
 from discord.ext import commands
 from requests import get as requestGet
-from tendo import singleton
 
 sys.path.append('./cogs')
 import utils
-
-#Only allow one bot to be online at the same time
-#me = singleton.SingleInstance() 
-
 
 #Folder and File locations
 cogs_folder = 'cogs'
@@ -24,7 +20,7 @@ if utils.getConfig('token') == "PUT_DISCORD_TOKEN_HERE": # Don't actually put yo
 			"It has to be surrounded by quotes, example: \"NjQdMzayODY5cTI3ODYtMzA2.XcVZPg.ZjG28fgYJkzEw3abOgs3r3DtJVQ\"\n")
 	quit()
 
-
+uptime = time.time()
 returnCode = "exit"
 bot = commands.Bot(command_prefix=utils.determine_prefix)
 
@@ -156,7 +152,6 @@ async def prefix_(ctx, *args):
 	await utils.updateServerSettings(server, 'prefix', newPrefix)
 	await ctx.send(f"Changed prefix to \"{newPrefix}\"")
 
-
 @bot.command()
 async def github(ctx):
 	await ctx.send("Here you can find the official github repository for this bot: https://github.com/xpopy/Boten-Anna")
@@ -165,6 +160,21 @@ async def github(ctx):
 async def invite(ctx):
 	await ctx.send(utils.getConfig('inviteLink'))
 
+@bot.command()
+async def stats(ctx):
+	amountOfGuilds = len(bot.guilds)
+	amountOfMembers = 0
+	for guild in bot.guilds:
+		amountOfMembers += guild.member_count
+	file_amount, total_size = utils.folder_info("./music_cache")
+
+	text = f"Uptime: {utils.formatUptime(time.time() - uptime)}\n"
+	if amountOfGuilds == 1:
+		text += f"Serving {amountOfGuilds} guild with {amountOfMembers} members\n"
+	else:
+		text += f"Serving {amountOfGuilds} guilds with {amountOfMembers} members\n"
+	text += f"{utils.bytesToReadable(total_size)} storage used for {file_amount} cached songs"
+	await ctx.send("`" + text + "`")
 
 @bot.command()
 @commands.is_owner()

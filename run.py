@@ -3,8 +3,6 @@ import subprocess
 import sys
 import os
 
-from tendo import singleton
-
 
 if not os.path.exists('./cogs') or not os.path.exists('./cogs/bot.py') or not os.path.exists('./cogs/utils.py'):
 	print()

@@ -273,12 +273,51 @@ async def get_song_data(url, loop=None):
 
 def convert_seconds(seconds):
 	"""converts seconds to a string with format "m:s" or "h:m:s" """
+	seconds = int(seconds)
 	minutes, seconds = divmod(seconds, 60)
 	if minutes > 60:
 		hours, minutes = divmod(minutes, 60)
-		return '{:d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+		return '{:d}:{:02d}:{:02d}'.format(int(hours), minutes, seconds)
 	else:
 		return '{}:{:02d}'.format(minutes, seconds)
+
+def formatUptime(seconds):
+	seconds = int(seconds)
+
+	if not seconds > 60:
+		return f"{seconds}s"
+	
+	minutes, seconds = divmod(seconds, 60)
+	if not minutes > 60:
+		return f"{minutes}m, {seconds}s"
+
+	hours, minutes = divmod(minutes, 60)
+	if not hours > 24:
+		return f"{hours}h, {minutes}m, {seconds}s"
+		
+	days, hours = divmod(hours, 24)
+	return f"{days}d, {hours}h, {minutes}m, {seconds}s"
+	
+def bytesToReadable(size,precision=0):
+    suffixes=['B','KB','MB','GB','TB']
+    suffixIndex = 0
+    while size >= 1000 and suffixIndex < 4:
+        suffixIndex += 1 #increment the index of the suffix
+        size = size/1000.0 #apply the division
+    return "%.*f %s"%(precision,size,suffixes[suffixIndex])
+
+def folder_info(start_path = '.'):
+	total_size = 0
+	file_amount = 0
+	for dirpath, _, filenames in os.walk(start_path):
+		for f in filenames:
+			file_amount += 1
+			fp = os.path.join(dirpath, f)
+			# skip if it is symbolic link
+			if not os.path.islink(fp):
+				total_size += os.path.getsize(fp)
+
+	return file_amount, total_size
 
 def isPlaylist(url):
 	if "watch?v=" in url:
