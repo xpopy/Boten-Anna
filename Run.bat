@@ -14,17 +14,19 @@ GOTO Run
 
 @echo pipenv not found, installing...
 @echo.
-
 pip install pipenv
 @echo.
 
 :Run
-
+@echo Pipenv is installed!
+@echo.
 @echo Checking dependencies...
 @echo.
 
+pipenv lock
 pipenv install > tmpFile 
 del tmpFile 
+
 
 @echo.
 @echo Done, launching bot
