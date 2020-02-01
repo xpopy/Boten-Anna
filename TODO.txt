@@ -1,3 +1,6 @@
+#TODO: !prefix await issue
+#TODO: Can't add stuff to playlist
+
 #TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
 
 
