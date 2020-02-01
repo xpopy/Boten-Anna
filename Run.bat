@@ -11,7 +11,6 @@ if "%myvar%" == "" GOTO InstallPipenv
 GOTO Run
 
 :InstallPipenv
-
 @echo pipenv not found, installing...
 @echo.
 pip install pipenv
@@ -23,7 +22,11 @@ pip install pipenv
 @echo Checking dependencies...
 @echo.
 
+if exist "Pipfile.lock" GOTO Dependencies
+
 pipenv lock
+
+:Dependencies
 pipenv install > tmpFile 
 del tmpFile 
 
