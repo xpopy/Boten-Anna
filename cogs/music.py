@@ -101,6 +101,9 @@ class Music(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.players = {}
+		self.dontReact = asyncio.Event()
+		self.lastReactIncrease = None
+		self.lastReactDecrease = None
 
 	def disconnect_all_players(self):
 		for guildID in self.players:
@@ -191,19 +194,21 @@ class Music(commands.Cog):
 	async def handleNPReactions(self, reaction, user, mPlayer):
 		''' Handles the Now Playing message reactions '''
 		vc = reaction.message.guild.voice_client
-		await reaction.remove(user)
+		
 
 		if (not user.voice) or user.voice.channel != vc.channel:
 			#Only users in the same voice channel can use reactions
 			return
 
 		if reaction.emoji == "⏭️":
+			await reaction.remove(user)
 			if vc and vc.source:	
 				vc.source.volume = 0
 				vc.stop()
 				await reaction.message.edit(content=f"{user.mention} skipped a song")
 
 		elif reaction.emoji == "⏯️":
+			await reaction.remove(user)
 			if vc.is_paused():
 				vc.resume()
 				mPlayer.timeStarted = time.time() - mPlayer.timePaused
@@ -218,11 +223,34 @@ class Music(commands.Cog):
 			newVolume = self.snapVolumeToSteps(mPlayer.volume, increase=False)
 			await mPlayer.setVolume(newVolume)
 			await reaction.message.edit(content=f"{user.mention} lowered the volume to `{round(newVolume*100)}`")
+			self.lastReactDecrease = time.time()
+			await self.delayedRemoveReaction(reaction, user)
 		
 		elif reaction.emoji == "🔊":
 			newVolume = self.snapVolumeToSteps(mPlayer.volume, increase=True)
 			await mPlayer.setVolume(newVolume)
 			await reaction.message.edit(content=f"{user.mention} increased the volume to `{round(newVolume*100)}`")
+			self.lastReactIncrease = time.time()
+			await self.delayedRemoveReaction(reaction, user)
+	async def delayedRemoveReaction(self, reaction, user):
+		await asyncio.sleep(4)
+		current = time.time()
+		if reaction.emoji == "🔉":
+			print(current - self.lastReactDecrease)
+			if current - self.lastReactDecrease > 3.8:
+				self.dontReact.set()
+				await reaction.remove(user)
+				await asyncio.sleep(1)
+				self.dontReact.clear()
+		elif reaction.emoji == "🔊":
+			print(current - self.lastReactIncrease)
+			if current - self.lastReactIncrease > 3.8:
+				self.dontReact.set()
+				await reaction.remove(user)
+				await asyncio.sleep(1)
+				self.dontReact.clear()
+
+		
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
@@ -241,6 +269,17 @@ class Music(commands.Cog):
 		mPlayer = self.get_player(reaction.message.guild)
 		if mPlayer.current_np_message and mPlayer.current_np_message.id == reaction.message.id:
 			await self.handleNPReactions(reaction, user, mPlayer)
+			
+	@commands.Cog.listener()
+	async def on_reaction_remove(self, reaction, user):
+		if user == self.bot.user or reaction.message.author != self.bot.user:
+			return
+
+		mPlayer = self.get_player(reaction.message.guild)
+		if mPlayer.current_np_message and mPlayer.current_np_message.id == reaction.message.id:
+			if reaction.emoji == "🔉" or reaction.emoji == "🔊":
+				if not self.dontReact.is_set():
+					await self.handleNPReactions(reaction, user, mPlayer)
 
 	@commands.command(aliases=['join', 'j'])
 	@commands.check(is_accepted_text_channel)

@@ -1,19 +1,14 @@
 
 #TODO: [ext.commands] Add support for calling a Command as a regular function.
 	# specially for help
-
-#TODO: np reactions, dont remove reactions until after a few seconds to counter spam
-
 #TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
-
 #TODO: maybe use threads for updating files https://stackoverflow.com/a/35240362
-
 #TODO: commands to add:
 	#TODO: add a command to limit normalization to either on, only default playlist, or off.
 		#TODO: Maybe default to off and only allow creator to allow it on any server they want
-
 #TODO: if a songs audio levels are close enough then don't normalize it
 
+#TODO: fix error message on restarting when bot is connected to voice
 #TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
 	#TODO: Allows for seeking, set_eq
 #TODO: replace prints with some sort of logging

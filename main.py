@@ -20,6 +20,7 @@ if __name__ == "__main__":
 		print(e)
 
 	if exitCode == "restart":
+		print()
 		print("Restarting Bot")
 		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
 		print()
