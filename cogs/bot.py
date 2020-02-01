@@ -29,7 +29,7 @@ if not os.path.exists(f'./{cogs_folder}'):
 	os.makedirs(f'./{cogs_folder}')
 
 #Load all cogs
-print()
+print("Loading modules")
 for filename in os.listdir(f'./{cogs_folder}'):
 	if filename == "utils.py" or filename == "bot.py":
 		continue
@@ -40,7 +40,6 @@ for filename in os.listdir(f'./{cogs_folder}'):
 		except Exception as e:
 			print(f'"{filename}" failed to load:')
 			print(f"\t{e}")
-print()
 
 
 @bot.event
@@ -77,9 +76,8 @@ async def globally_block_dms(ctx):
 async def log_to_console(ctx):
 	if not ctx.invoked_subcommand:
 		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
-		return True
-
-
+	return True
+	
 
 @bot.command()
 @commands.is_owner()
@@ -149,7 +147,7 @@ async def prefix_(ctx, *args):
 		return await ctx.send(f"The prefix can not be only spaces")
 
 	server = str(ctx.guild.id)
-	await utils.updateServerSettings(server, 'prefix', newPrefix)
+	utils.updateServerSettings(server, 'prefix', newPrefix)
 	await ctx.send(f"Changed prefix to \"{newPrefix}\"")
 
 @bot.command()
@@ -158,7 +156,7 @@ async def github(ctx):
 
 @bot.command()
 async def invite(ctx):
-	await ctx.send(utils.getConfig('inviteLink'))
+	await ctx.send(f"https://discordapp.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=3501120&scope=bot")
 
 @bot.command()
 async def stats(ctx):
@@ -174,7 +172,9 @@ async def stats(ctx):
 	else:
 		text += f"Serving {amountOfGuilds} guilds with {amountOfMembers} members\n"
 	text += f"{utils.bytesToReadable(total_size)} storage used for {file_amount} cached songs"
-	await ctx.send("`" + text + "`")
+
+	embed = discord.Embed(title="", description=text)
+	await ctx.send(embed=embed)
 
 @bot.command()
 @commands.is_owner()

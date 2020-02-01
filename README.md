@@ -11,17 +11,7 @@ A discord bot written in python
 
    2. Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
 
-3. Install Pipenv:
-    
-    1. Open up a command prompt or powershell in the bot folder (shift rightclick the folder > open powershell window here)
-
-    2. `pip install pipenv`: Installs pipenv
-
-    3. `pipenv install`: Install all dependencies needed for the bot to run. 
-    
-    4. After it's done installing you can close the window
-
-4. Install ffmpeg:
+3. Install ffmpeg:
 
     1. Go to https://ffmpeg.zeranoe.com/builds/, select "Windows 64-bit" then click on Download Build
 
@@ -44,7 +34,7 @@ A discord bot written in python
 
         4. In the new window, click on `New` and type in `C:\ffmpeg\bin\` and hit enter, now hit `OK` on the open windows
 
-5. API tokens:
+4. API tokens:
 
     1. In /settings/config.json, edit the "INSERT DISCORD TOKEN" with your own discord token:
          1. Go to https://discordapp.com/developers/applications/

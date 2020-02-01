@@ -1,9 +1,12 @@
-#TODO: !prefix await issue
-#TODO: Can't add stuff to playlist
+
+#TODO: [ext.commands] Add support for calling a Command as a regular function.
+	# specially for help
+
+#TODO: np reactions, dont remove reactions until after a few seconds to counter spam
 
 #TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
 
-
+#	On startup, Check if bot is already connected so there isn't 2 bots active at the same time
 #TODO: maybe use threads for updating files https://stackoverflow.com/a/35240362
 
 #TODO: commands to add:

@@ -103,8 +103,6 @@ class Music(commands.Cog):
 		self.players = {}
 
 
-	
-	
 	def is_connected_player(self, mPlayer):
 		voice_client = get(mPlayer.bot.voice_clients, guild=mPlayer._guild)
 		return voice_client and voice_client.is_connected()
