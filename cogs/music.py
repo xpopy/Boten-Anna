@@ -102,6 +102,14 @@ class Music(commands.Cog):
 		self.bot = bot
 		self.players = {}
 
+	def disconnect_all_players(self):
+		for guildID in self.players:
+			mPlayer = self.players[guildID]
+			vc = mPlayer._guild.voice_client
+			if vc and vc.is_playing():
+				mPlayer.stop_player = True
+				mPlayer.playNext.set()
+				mPlayer._guild.voice_client.stop()
 
 	def is_connected_player(self, mPlayer):
 		voice_client = get(mPlayer.bot.voice_clients, guild=mPlayer._guild)

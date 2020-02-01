@@ -302,227 +302,243 @@ class MusicPlayer:
 		"""update "Now Playing" loop"""
 		await self.bot.wait_until_ready()
 		while not self.bot.is_closed():
-
-			await self.stop_update_np.wait()
-
-			# Wait for the next song. If we timeout cancel the player and disconnect
 			try:
-				async with timeout(5):
-					await self.update_np.wait()
-					self.update_np.clear()
 
-			except asyncio.TimeoutError:
-				#TODO: go through message history, check last message and compare time since it was sent, if it was sent within 5s ago, then np update but skip sticky
-				if self.current_np_message:
-					message = (await self.current_np_message.channel.history(limit=1).flatten())[0]
-
-					localTimezoneCreatedAt = datetime_from_utc_to_local(message.created_at)
-					if (time.time() - localTimezoneCreatedAt.timestamp()) < 10:
-						await self.stop_update_np.wait()
-						await self.now_playing(dontSticky = True)
-					else:
-						await self.stop_update_np.wait()
-						await self.now_playing()
-			else:
 				await self.stop_update_np.wait()
-				await self.now_playing()
-			if self.current == None and self.getQueuedAmount( procDefault = True, prepareDefault = True) == 0:
-				self.stop_update_np.clear()
+
+				try:
+					async with timeout(5):
+						await self.update_np.wait()
+						self.update_np.clear()
+
+				except asyncio.exceptions.CancelledError:
+					pass
+				except asyncio.exceptions.TimeoutError:
+					pass
+				except asyncio.TimeoutError:
+					if self.current_np_message:
+						message = (await self.current_np_message.channel.history(limit=1).flatten())[0]
+
+						localTimezoneCreatedAt = datetime_from_utc_to_local(message.created_at)
+						if (time.time() - localTimezoneCreatedAt.timestamp()) < 10:
+							await self.stop_update_np.wait()
+							await self.now_playing(dontSticky = True)
+						else:
+							await self.stop_update_np.wait()
+							await self.now_playing()
+				else:
+					await self.stop_update_np.wait()
+					await self.now_playing()
+				if self.current == None and self.getQueuedAmount( procDefault = True, prepareDefault = True) == 0:
+					self.stop_update_np.clear()
+			except:
+				pass
 	async def downloader_loop(self):
 		await self.bot.wait_until_ready()
 		await self.downloader.wait()
 		self.downloader.clear()
 
 		while not self.bot.is_closed():
+			try:
+				if not is_connected_player(self):
+					if self.stop_player:
+						await self.destroy(self._guild) 
+					await self.downloader.wait()
+					self.downloader.clear()
 
-			if not is_connected_player(self):
-				if self.stop_player:
-					await self.destroy(self._guild) 
-				await self.downloader.wait()
-				self.downloader.clear()
-
-			#print("checking for something to download")
-			if self.prepareQueue.playnow:
-				#print("downloading playnow")
-				songObj = self.prepareQueue.playnow[0]
-				await self.prepareYTSource(songObj)
-				if self.prepareQueue.playnow and self.prepareQueue.playnow[0] == songObj:
-					del self.prepareQueue.playnow[0]
-				else:
-					continue
-				if not songObj.source or not is_connected_player(self):
-					continue
-				self.processedQueue.playnow.append(songObj)
-				self.wakeUpPlayer()
-				if self._guild.voice_client.source:
-					self._guild.voice_client.source.volume = 0
-				self._guild.voice_client.stop()
-
-			elif self.prepareQueue.playnext:
-				#print("downloading playnext")
-				songObj = self.prepareQueue.playnext[0]
-				await self.prepareYTSource(songObj)
-				if self.prepareQueue.playnext and self.prepareQueue.playnext[0] == songObj:
-					del self.prepareQueue.playnext[0]
-				else:
-					continue
-				if not songObj.source or not is_connected_player(self):
-					continue
-				self.processedQueue.playnext.append(songObj)
-				self.wakeUpPlayer()
-
-			elif len(self.processedQueue.getQueue()) < max_processed_songs:
-
-				if self.prepareQueue.play:
-					#print("downloading song")
-					songObj = self.prepareQueue.play[0]
+				print("checking for something to download")
+				if self.prepareQueue.playnow:
+					print("downloading playnow")
+					songObj = self.prepareQueue.playnow[0]
 					await self.prepareYTSource(songObj)
-					if self.prepareQueue.play and self.prepareQueue.play[0] == songObj:
-						del self.prepareQueue.play[0]
+					if self.prepareQueue.playnow and self.prepareQueue.playnow[0] == songObj:
+						del self.prepareQueue.playnow[0]
 					else:
 						continue
 					if not songObj.source or not is_connected_player(self):
 						continue
-					self.processedQueue.play.append(songObj)
+					self.processedQueue.playnow.append(songObj)
+					self.wakeUpPlayer()
+					if self._guild.voice_client.source:
+						self._guild.voice_client.source.volume = 0
+					self._guild.voice_client.stop()
+
+				elif self.prepareQueue.playnext:
+					print("downloading playnext")
+					songObj = self.prepareQueue.playnext[0]
+					await self.prepareYTSource(songObj)
+					if self.prepareQueue.playnext and self.prepareQueue.playnext[0] == songObj:
+						del self.prepareQueue.playnext[0]
+					else:
+						continue
+					if not songObj.source or not is_connected_player(self):
+						continue
+					self.processedQueue.playnext.append(songObj)
 					self.wakeUpPlayer()
 
-				elif len(self.processedQueue) < max_processed_songs:
+				elif len(self.processedQueue.getQueue()) < max_processed_songs:
 
-					if self.prepareQueue.default:
-						#print("downloading from default playlist")
-						url = self.prepareQueue.default[0]
-						self.prepareQueue.default = self.prepareQueue.default[1:] + self.prepareQueue.default[:1]
-						songObj = Song(title="temp", url=url,
-										thumbnail="temp",
-										duration=None,
-										requester=None)
+					if self.prepareQueue.play:
+						print("downloading song")
+						songObj = self.prepareQueue.play[0]
 						await self.prepareYTSource(songObj)
-						if not songObj.source:
+						if self.prepareQueue.play and self.prepareQueue.play[0] == songObj:
+							del self.prepareQueue.play[0]
+						else:
 							continue
-						title, url, thumbnail, duration = await utils.get_song_data(url)
-						songObj.url = url
-						songObj.title = title
-						songObj.duration = duration
-						songObj.thumbnail = thumbnail
-						if not is_connected_player(self):
+						if not songObj.source or not is_connected_player(self):
 							continue
-						self.processedQueue.default.append(songObj)
+						self.processedQueue.play.append(songObj)
 						self.wakeUpPlayer()
 
-					else:
-						server = str(self._guild.id)
-						data = utils.getServerPlaylist(server)
-						if data:
-							#print("preparing default playlist")
-							newList = []
-							for link in data:
-								if "playlist?list=" in link:
-									_, _, links = await utils.get_playlist_info(link)
-									newList = newList + links
-								else:
-									newList.append(link)
+					elif len(self.processedQueue) < max_processed_songs:
 
+						if self.prepareQueue.default:
+							print("downloading from default playlist")
+							url = self.prepareQueue.default[0]
+							self.prepareQueue.default = self.prepareQueue.default[1:] + self.prepareQueue.default[:1]
+							songObj = Song(title="temp", url=url,
+											thumbnail="temp",
+											duration=None,
+											requester=None)
+							await self.prepareYTSource(songObj)
+							if not songObj.source:
+								continue
+							title, url, thumbnail, duration = await utils.get_song_data(url)
+							songObj.url = url
+							songObj.title = title
+							songObj.duration = duration
+							songObj.thumbnail = thumbnail
 							if not is_connected_player(self):
 								continue
-							self.prepareQueue.default = newList
-							shuffle(self.prepareQueue.default)
-							continue
+							self.processedQueue.default.append(songObj)
+							self.wakeUpPlayer()
 
 						else:
-							#print("nothing to download, waiting")
-							await self.downloader.wait()
-							self.downloader.clear()
+							server = str(self._guild.id)
+							data = utils.getServerPlaylist(server)
+							if data:
+								print("preparing default playlist")
+								newList = []
+								for link in data:
+									if "playlist?list=" in link:
+										_, _, links = await utils.get_playlist_info(link)
+										newList = newList + links
+									else:
+										newList.append(link)
+
+								if not is_connected_player(self):
+									continue
+								self.prepareQueue.default = newList
+								shuffle(self.prepareQueue.default)
+								continue
+
+							else:
+								print("nothing to download, waiting")
+								await self.downloader.wait()
+								self.downloader.clear()
+					else:
+						print("filled queue, waiting")
+						await self.downloader.wait()
+						self.downloader.clear()
 				else:
-					#print("filled queue, waiting")
+					print("filled queue, waiting")
 					await self.downloader.wait()
 					self.downloader.clear()
-			else:
-				#print("filled queue, waiting")
-				await self.downloader.wait()
-				self.downloader.clear()
 
-			await asyncio.sleep(2)
+				await asyncio.sleep(2)
+			except:
+				pass
 	async def player_loop(self):
 		"""main player loop."""
 		await self.bot.wait_until_ready()
 		while not self.bot.is_closed():
 
-			await self.playNext.wait()
-			self.playNext.clear()
 
-			# Wait for the next song. If we timeout cancel the player and disconnect
 			try:
-				async with timeout(time_wait_diconnect_emtpy_playlist):
-					while(True):
-						if self.stop_player:
-							await self.destroy(self._guild) 
-							await self.playNext.wait()
-							self.playNext.clear()
-						elif self.processedQueue.playnow:
-							songObj = self.processedQueue.playnow.pop(0)
-							break
-						elif self.prepareQueue.playnow:
-							await self.playNext.wait()
-							self.playNext.clear()
-
-						elif self.processedQueue.playnext:
-							songObj = self.processedQueue.playnext.pop(0)
-							break
-						elif self.prepareQueue.playnext:
-							await self.playNext.wait()
-							self.playNext.clear()
-
-						elif self.processedQueue.play:
-							songObj = self.processedQueue.play.pop(0)
-							break
-						elif self.prepareQueue.play:
-							await self.playNext.wait()
-							self.playNext.clear()
-
-						elif self.processedQueue.default:
-							songObj = self.processedQueue.default.pop(0)
-							break
-						else:
-							#Nothing to play, wait for new song
-							await self.playNext.wait()
-							self.playNext.clear()
-
-			except asyncio.TimeoutError:
-				await self.destroy(self._guild)
-				return
-
-			songObj.source.volume = self.volume
-			self.current = songObj
-			self.timeStarted = time.time()
-			self.timePaused = None
-			
-			self.update_np.set()
-			if self.current_np_message:
-				self.stop_update_np.set()
-
-			self._guild.voice_client.play(songObj.source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.playNext.set))
-			await self.playNext.wait()
-
-			self.current = None
-
-			#Song finished, make sure to clean it up
-			#songObj.source.cleanup()
-			
-			if self.stop_player:
-				await self.destroy(self._guild) 
 				await self.playNext.wait()
 				self.playNext.clear()
-				#return
-			else:
-				self.downloader.set()
-				await asyncio.sleep(time_to_wait_between_songs)
+
+
+				# Wait for the next song. If we timeout cancel the player and disconnect
+				try:
+					async with timeout(time_wait_diconnect_emtpy_playlist):
+						while(True):
+							if self.stop_player:
+								await self.destroy(self._guild) 
+								await self.playNext.wait()
+								self.playNext.clear()
+							elif self.processedQueue.playnow:
+								songObj = self.processedQueue.playnow.pop(0)
+								break
+							elif self.prepareQueue.playnow:
+								await self.playNext.wait()
+								self.playNext.clear()
+
+							elif self.processedQueue.playnext:
+								songObj = self.processedQueue.playnext.pop(0)
+								break
+							elif self.prepareQueue.playnext:
+								await self.playNext.wait()
+								self.playNext.clear()
+
+							elif self.processedQueue.play:
+								songObj = self.processedQueue.play.pop(0)
+								break
+							elif self.prepareQueue.play:
+								await self.playNext.wait()
+								self.playNext.clear()
+
+							elif self.processedQueue.default:
+								songObj = self.processedQueue.default.pop(0)
+								break
+							else:
+								#Nothing to play, wait for new song
+								await self.playNext.wait()
+								self.playNext.clear()
+
+				except asyncio.TimeoutError:
+					await self.destroy(self._guild)
+					return
+
+				songObj.source.volume = self.volume
+				self.current = songObj
+				self.timeStarted = time.time()
+				self.timePaused = None
+				
+				self.update_np.set()
+				if self.current_np_message:
+					self.stop_update_np.set()
+
+				self._guild.voice_client.play(songObj.source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.playNext.set))
+				await self.playNext.wait()
+
+				self.current = None
+
+				#Song finished, make sure to clean it up
+				#songObj.source.cleanup()
+				
+				if self.stop_player:
+					await self.destroy(self._guild) 
+					await self.playNext.wait()
+					self.playNext.clear()
+					#return
+				else:
+					self.downloader.set()
+					await asyncio.sleep(time_to_wait_between_songs)
+			except:
+				pass
 	async def prepareYTSource(self, songObj):
 		for song in list(self.processedQueue) + ([self.current] if self.current else []):
 			if song.url == songObj.url:
 				#Song is already in queue, no need to download it again so just duplicate the object
 				songObj.source = song.source
 				return
-		songObj.source = await ytdl.YTDLSource.from_url(self, songObj.url, loop=self.bot.loop, stream=False)
+		try:
+			songObj.source = await ytdl.YTDLSource.from_url(self, songObj.url, loop=self.bot.loop, stream=False)
+		except:
+			pass
+
 	async def destroy(self, guild):
 		"""Disconnect and cleanup the player."""
 		if guild.voice_client:

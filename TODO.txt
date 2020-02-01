@@ -6,7 +6,6 @@
 
 #TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
 
-#	On startup, Check if bot is already connected so there isn't 2 bots active at the same time
 #TODO: maybe use threads for updating files https://stackoverflow.com/a/35240362
 
 #TODO: commands to add:
@@ -15,11 +14,6 @@
 
 #TODO: if a songs audio levels are close enough then don't normalize it
 
-#TODO: test restart when using pipenv
-	#TODO: might have to replace the command and run the run.bat instead
-
-#TODO: when restarting and shutting down, make sure to stop all processes
-
 #TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
 	#TODO: Allows for seeking, set_eq
 #TODO: replace prints with some sort of logging
@@ -27,7 +21,7 @@
 #TODO: maybe place player and downloader in a try catch loop so that it doesn't crash when an issue happens
 #TODO: Check if ffmpeg is installed in initialization
 
-#TODO: Write a short comment on what functions do
+#TODO: Write a short documentation on what functions do
 #TODO: read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
 	#TODO: show subscommands in the main help menu
 	#TODO: maybe rewrite help as a dictionary with categories, commands, short description and a long description

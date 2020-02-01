@@ -7,6 +7,7 @@ import asyncio
 import discord
 from discord.ext import commands
 from requests import get as requestGet
+from tendo import singleton
 
 sys.path.append('./cogs')
 import utils
@@ -123,6 +124,8 @@ async def reload(ctx, extension = None):
 	else:
 		global returnCode
 		returnCode = "restart"
+		player = bot.get_cog('Music')
+		player.disconnect_all_players()
 		await ctx.send("Restarting, brb :D")
 		return await ctx.bot.logout()
 
@@ -204,6 +207,8 @@ async def help_(ctx, *args):
 @bot.command()
 @commands.is_owner()
 async def shutdown(ctx):
+	player = bot.get_cog('Music')
+	player.disconnect_all_players()
 	await ctx.send("Shutting down...")
 	return await ctx.bot.logout()
 
@@ -221,7 +226,10 @@ async def on_ready():
 
 def run():
 	try:
+		me = singleton.SingleInstance() 
 		bot.run(utils.getConfig('token'))
+
+		del me
 		return returnCode
 		
 	except Exception as e:

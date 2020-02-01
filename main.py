@@ -21,5 +21,6 @@ if __name__ == "__main__":
 
 	if exitCode == "restart":
 		print("Restarting Bot")
+		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
 		print()
 		subprocess.call([sys.executable, "main.py"])
