@@ -3,7 +3,7 @@ A discord bot written in python
 
 
 # Installation (Windows)
-1. Download the bot, either as a zip (unzip it where you want it) or clone it
+1. Download the bot, either as a zip (unzip it where you want it) or clone it using git
 
 2. Install python 3.8.1:
 
