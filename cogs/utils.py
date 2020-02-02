@@ -281,6 +281,12 @@ def convert_seconds(seconds):
 	else:
 		return '{}:{:02d}'.format(minutes, seconds)
 
+def versiontuple(v):
+   filled = []
+   for point in v.split("."):
+      filled.append(point.zfill(8))
+   return tuple(filled)
+
 def formatUptime(seconds):
 	seconds = int(seconds)
 
