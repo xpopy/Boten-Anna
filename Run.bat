@@ -1,6 +1,5 @@
 @echo off
 @echo Checking for pipenv...
-@echo.
 
 
 pip --disable-pip-version-check list | findstr pipenv > tmpFile 
@@ -18,16 +17,19 @@ pip install pipenv
 
 :Run
 @echo Pipenv is installed!
-@echo.
-@echo Checking dependencies...
-@echo.
+
 
 if exist "Pipfile.lock" GOTO Dependencies
 
-pipenv lock
+@echo Creating Pipfile.lock...
+
+pipenv lock > tmpFile 2>&1
+del tmpFile
+color 07
 
 :Dependencies
-pipenv install > tmpFile 
+@echo Checking pipenv dependencies...
+pipenv install > tmpFile 2>&1
 del tmpFile 
 
 
