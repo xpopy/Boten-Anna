@@ -1,39 +1,43 @@
 
-#TODO: [ext.commands] Add support for calling a Command as a regular function.
-	# specially for help
-#TODO: set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
-#TODO: maybe use threads for updating files https://stackoverflow.com/a/35240362
-#TODO: commands to add:
-	#TODO: add a command to limit normalization to either on, only default playlist, or off.
-		#TODO: Maybe default to off and only allow creator to allow it on any server they want
-#TODO: if a songs audio levels are close enough then don't normalize it
+[ext.commands] Add support for calling a Command as a regular function.
+	specially for help
+	
+set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
+maybe use threads for updating files https://stackoverflow.com/a/35240362
 
-#TODO: fix error message on restarting when bot is connected to voice
-#TODO: convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
-	#TODO: Allows for seeking, set_eq
-#TODO: replace prints with some sort of logging
-#TODO: typing in !play/!pause will make the np message sticky instantly
-#TODO: maybe place player and downloader in a try catch loop so that it doesn't crash when an issue happens
-#TODO: Check if ffmpeg is installed in initialization
+commands to add:
+	add a command to limit normalization to either on, only default playlist, or off.
+		Maybe default to off and only allow creator to allow it on any server they want
 
-#TODO: Write a short documentation on what functions do
-#TODO: read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
-	#TODO: show subscommands in the main help menu
-	#TODO: maybe rewrite help as a dictionary with categories, commands, short description and a long description
-	#TODO: https://i.imgur.com/L2Z3IYo.png
-	#TODO: Move it to initialize so it doesn't have to create it every time we want to check help
-#TODO: re-enable playing playlists
-	#TODO: best would probably be to webscrape the playlist to get all info
-	#TODO: --playlist-random  may help
-	#TODO: maybe make it like default playlist, a queue of urls
-		#TODO: shuffle?
-#TODO: is typing is bugged
-#TODO: check if youtube playlist has a "last edited" field so i can save the playlist and not update it all the time
-	#TODO: maybe rework saving playlists so it saves names (name of playlist), time etc?
-	#TODO: set this once done    prepareDefault = True   in   nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = False)[0]
+if a songs audio levels are close enough then don't normalize it
+fix error message on restarting when bot is connected to voice
 
-#TODO: add undo: https://github.com/pckv/pcbot/blob/master/plugins/music.py
-#TODO: play youtube radio
-#TODO: play streams
-#TODO: soundcloud (apparently youtubedl already supports it, look it up
+convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
+	Allows for seeking, set_eq
+
+replace prints with some sort of logging
+typing in !play/!pause will make the np message sticky instantly
+Write a short documentation on what functions do
+
+read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
+	show subscommands in the main help menu
+	maybe rewrite help as a dictionary with categories, commands, short description and a long description
+	https://i.imgur.com/L2Z3IYo.png
+	Move it to initialize so it doesn't have to create it every time we want to check help
+
+re-enable playing playlists
+	best would probably be to webscrape the playlist to get all info
+	--playlist-random  may help
+	maybe make it like default playlist, a queue of urls
+		shuffle?
+
+is typing is bugged
+check if youtube playlist has a "last edited" field so i can save the playlist and not update it all the time
+	maybe rework saving playlists so it saves names (name of playlist), time etc?
+	set this once done    prepareDefault = True   in   nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = False)[0]
+
+add undo: https://github.com/pckv/pcbot/blob/master/plugins/music.py
+play youtube radio
+play streams
+soundcloud (apparently youtubedl already supports it, look it up
 
