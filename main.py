@@ -47,7 +47,7 @@ if __name__ == "__main__":
 			raise OSError("Could not update the bot. You will need to run 'git pull' yourself.")
 
 		print("Update successful, restarting...")
-		subprocess.call([sys.executable, sys.argv])
+		subprocess.call([sys.executable, "main.py"])
 
 
 	if exitCode == "restart":
@@ -55,4 +55,4 @@ if __name__ == "__main__":
 		print("Restarting Bot")
 		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
 		print()
-		subprocess.call([sys.executable, sys.argv])
+		subprocess.call([sys.executable, "main.py"])

@@ -23,6 +23,7 @@ if utils.getConfig('token') == "PUT_DISCORD_TOKEN_HERE": # Don't actually put yo
 	quit()
 
 uptime = time.time()
+hasSentUpdateNotification = False
 returnCode = "exit"
 bot = commands.Bot(command_prefix=utils.determine_prefix)
 
@@ -42,6 +43,13 @@ for filename in os.listdir(f'./{cogs_folder}'):
 		except Exception as e:
 			print(f'"{filename}" failed to load:')
 			print(f"\t{e}")
+
+async def exitWithCode(exitCode):
+	global returnCode
+	returnCode = exitCode
+	player = bot.get_cog('Music')
+	player.disconnect_all_players()
+	return await bot.logout()
 
 
 @bot.event
@@ -83,6 +91,7 @@ async def log_to_console(ctx):
 @tasks.loop(seconds=30.0)
 async def check_for_update():
 	try:
+
 		json_data = requestGet("https://raw.githubusercontent.com/xpopy/Boten-Anna/master/app.json").json()
 		onlineVersion = json_data['version']
 		currentVersion = 0
@@ -92,26 +101,23 @@ async def check_for_update():
 		if utils.versiontuple(onlineVersion) > utils.versiontuple(currentVersion):
 			#There's a new version, send a message to owner that the bot can be updated
 			info = await bot.application_info()
-			await info.owner.send("There's a new update available, please run \"(prefix)update\" in order to automatically update")
-			print("There's a new update available, please run (prefix)update in order to automatically update")
+			if not hasSentUpdateNotification:
+				hasSentUpdateNotification = True
+				await info.owner.send(f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
+						"\nPlease run \"(prefix)update\" in order to automatically update." +
+						"\nDon't forget to check the console output to see if the update went well.")
+			print(f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
+						"\n Please run \"(prefix)update\" in order to automatically update." +
+						"\nDon't forget to check the console output to see if the update went well.")
 	except Exception as e:
 		print(e)
-
-@bot.command()
-async def testawd(ctx, extension):
-	print("lol")
-
 
 
 @bot.command()
 @commands.is_owner()
 async def update(ctx):
-	global returnCode
-	returnCode = "update"
-	player = bot.get_cog('Music')
-	player.disconnect_all_players()
 	await ctx.send("Updating, brb :D")
-	return await ctx.bot.logout()
+	await exitWithCode("update")
 
 
 @bot.command()
@@ -156,12 +162,7 @@ async def reload(ctx, extension = None):
 			print(e)
 		return
 	else:
-		global returnCode
-		returnCode = "restart"
-		player = bot.get_cog('Music')
-		player.disconnect_all_players()
-		await ctx.send("Restarting, brb :D")
-		return await ctx.bot.logout()
+		await exitWithCode("restart")
 
 @bot.command(aliases=['setprofilepic'])
 @commands.is_owner()
@@ -241,17 +242,23 @@ async def help_(ctx, *args):
 @bot.command()
 @commands.is_owner()
 async def shutdown(ctx):
-	player = bot.get_cog('Music')
-	player.disconnect_all_players()
 	await ctx.send("Shutting down...")
-	return await ctx.bot.logout()
+	await exitWithCode("exit")
 
 @bot.event
 async def on_ready():
 	print()
+	
 	print('Client:')
 	print(f"{bot.user.name}, {bot.user.id}")
 	print()
+
+	with open('app.json') as json_file:
+		data = json.load(json_file)
+		ver = data['version']
+		print(f'Version: {ver}')
+		print()
+
 	info = await bot.application_info()
 	print('Owner:')
 	print(f"{info.owner.name}, {info.owner.id}")
