@@ -441,7 +441,8 @@ async def helpFunction(ctx, helpCommand=None):
 						"reload",
 						"setprofilepic",
 						"prefix",
-						"shutdown"]
+						"shutdown",
+						"update"]
 
 	if not helpCommand:
 		#no helpCommand which means show the whole help message
@@ -682,6 +683,10 @@ async def helpFunction(ctx, helpCommand=None):
 		elif helpCommand == "shutdown":
 			commandSyntax += "shutdown"
 			description += "Shuts down the bot"
+		
+		elif helpCommand == "update":
+			commandSyntax += "update"
+			description += "Updates the bot if there any and then restarts"
 		
 		commandSyntax += "`\n\n"
 		embed = discord.Embed(description=commandSyntax + description)
