@@ -36,15 +36,11 @@ if __name__ == "__main__":
 
 		print("Passed Git checks...")
 
-		# Check that the current working directory is clean
-		status = subprocess.check_output('git status --porcelain --assume-unchanged cogs/custom.py', shell=True, universal_newlines=True)
-		if status:
-			raise OSError("You have modified files that are tracked by Git (e.g the bot\'s source files).\nYou'll have to update the bot manually")
-
 		try:
 			subprocess.check_call('git pull --assume-unchanged cogs/custom.py', shell=True)
 		except subprocess.CalledProcessError:
-			raise OSError("Could not update the bot. You will need to run 'git pull' yourself.")
+			raise OSError("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
+							"You will need to run 'git pull' yourself or manually update the files.")
 
 		print("Update successful, restarting...")
 		subprocess.call([sys.executable, "main.py"])
