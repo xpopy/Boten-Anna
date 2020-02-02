@@ -40,7 +40,7 @@ if __name__ == "__main__":
 		subprocess.check_call('git update-index --assume-unchanged cogs/custom.py', shell=True)
 
 		try:
-			subprocess.check_call('git pull --assume-unchanged cogs/custom.py', shell=True)
+			subprocess.check_call('git pull', shell=True)
 		except subprocess.CalledProcessError:
 			raise OSError("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
 							"You will need to run 'git pull' yourself or manually update the files.")
