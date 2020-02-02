@@ -251,6 +251,9 @@ async def shutdown(ctx):
 async def on_ready():
 	print()
 	
+	print("Loading done\n")
+	print("-------------------------------------\n")
+
 	ver = ""
 	with open('app.json') as json_file:
 		data = json.load(json_file)
@@ -273,6 +276,8 @@ async def on_ready():
 			print(f"{guild.name}, {guild.id}")
 	print()
 	check_for_update.start()
+
+	
 
 
 def run():
