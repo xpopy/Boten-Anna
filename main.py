@@ -42,7 +42,7 @@ if __name__ == "__main__":
 			raise OSError("You have modified files that are tracked by Git (e.g the bot\'s source files).\nYou'll have to update the bot manually")
 
 		try:
-			subprocess.check_call('git pull', shell=True)
+			subprocess.check_call('git pull --assume-unchanged cogs/custom.py', shell=True)
 		except subprocess.CalledProcessError:
 			raise OSError("Could not update the bot. You will need to run 'git pull' yourself.")
 

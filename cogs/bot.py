@@ -88,7 +88,8 @@ async def log_to_console(ctx):
 		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
 	return True
 	
-@tasks.loop(seconds=86400.0)
+#@tasks.loop(seconds=86400.0)
+@tasks.loop(seconds=30.0)
 async def check_for_update():
 	global hasSentUpdateNotification
 	try:

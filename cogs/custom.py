@@ -7,7 +7,7 @@ class Custom(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	#This is an example command, change the "exampleFunction" to whatever you want your command to be 
+	#This is an example command, change the "exampleFunction" to whatever you want your command to b, or add a completely new function
 	@commands.command()
 	async def exampleFunction(self,  ctx, *, user: discord.Member):
 		#Command code goes here
