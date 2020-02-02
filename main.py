@@ -36,6 +36,9 @@ if __name__ == "__main__":
 
 		print("Passed Git checks...")
 
+		#Ignoring changes done to the custom.py file so we don't overwrite it
+		subprocess.check_call('git update-index --assume-unchanged cogs/custom.py', shell=True)
+
 		try:
 			subprocess.check_call('git pull --assume-unchanged cogs/custom.py', shell=True)
 		except subprocess.CalledProcessError:
