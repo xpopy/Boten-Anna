@@ -236,21 +236,17 @@ class Music(commands.Cog):
 		await asyncio.sleep(4)
 		current = time.time()
 		if reaction.emoji == "🔉":
-			print(current - self.lastReactDecrease)
 			if current - self.lastReactDecrease > 3.8:
 				self.dontReact.set()
 				await reaction.remove(user)
 				await asyncio.sleep(1)
 				self.dontReact.clear()
 		elif reaction.emoji == "🔊":
-			print(current - self.lastReactIncrease)
 			if current - self.lastReactIncrease > 3.8:
 				self.dontReact.set()
 				await reaction.remove(user)
 				await asyncio.sleep(1)
 				self.dontReact.clear()
-
-		
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
