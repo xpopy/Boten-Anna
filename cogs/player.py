@@ -327,8 +327,8 @@ class MusicPlayer:
 					await self.now_playing()
 				if self.current == None and self.getQueuedAmount( procDefault = True, prepareDefault = True) == 0:
 					self.stop_update_np.clear()
-			except:
-				pass
+			except Exception as e:
+				print(e)
 	async def downloader_loop(self):
 		await self.bot.wait_until_ready()
 		await self.downloader.wait()
@@ -443,8 +443,8 @@ class MusicPlayer:
 					self.downloader.clear()
 
 				await asyncio.sleep(2)
-			except:
-				pass
+			except Exception as e:
+				print(e)
 	async def player_loop(self):
 		"""main player loop."""
 		await self.bot.wait_until_ready()
@@ -520,8 +520,8 @@ class MusicPlayer:
 				else:
 					self.downloader.set()
 					await asyncio.sleep(time_to_wait_between_songs)
-			except:
-				pass
+			except Exception as e:
+				print(e)
 	async def prepareYTSource(self, songObj):
 		for song in list(self.processedQueue) + ([self.current] if self.current else []):
 			if song.url == songObj.url:
@@ -530,8 +530,8 @@ class MusicPlayer:
 				return
 		try:
 			songObj.source = await ytdl.YTDLSource.from_url(self, songObj.url, loop=self.bot.loop, stream=False)
-		except:
-			pass
+		except Exception as e:
+			print(e)
 
 	async def destroy(self, guild):
 		"""Disconnect and cleanup the player."""
