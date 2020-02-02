@@ -215,14 +215,23 @@ async def shutdown(ctx):
 @bot.event
 async def on_ready():
 	print()
-	print('Logged in as')
-	print(bot.user.name)
-	print(bot.user.id)
+	print('Client:')
+	print(f"{bot.user.name}, {bot.user.id}")
 	print()
-
+	info = await bot.application_info()
+	print('Owner:')
+	print(f"{info.owner.name}, {info.owner.id}")
+	print()
 	if not bot.guilds:
 		print("The bot haven't joined any servers, copy the link below and add the bot to your server to get started\n"
 			 		+ f"https://discordapp.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=3501120&scope=bot")
+	else:
+		print('Guild list:')
+		print()
+		for guild in bot.guilds:
+			print(f"{guild.name}, {guild.id}")
+	print()
+
 
 def run():
 	try:
