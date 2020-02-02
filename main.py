@@ -14,6 +14,11 @@ import cogs.bot as bot
 
 if __name__ == "__main__":
 
+
+	#Add ffmpeg to PATH
+	os.environ['PATH'] += ';' + os.path.abspath('bin/')
+	sys.path.append(os.path.abspath('bin/'))
+
 	try:
 		exitCode = bot.run()
 	except Exception as e:

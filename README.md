@@ -9,32 +9,11 @@ A discord bot written in python
 
    1. Go to https://www.python.org/downloads/release/python-381/ and download "Windows x86-64 executable installer"
 
-   2. Make sure you include PIP in the installation, and to tick the "Add Python to environment variables" option
+   2. When you run the installer, make sure you tick the option to "Add Python 3.8 to PATH" at the bottom
 
-3. Install ffmpeg:
+   3. Click Install Now
 
-    1. Go to https://ffmpeg.zeranoe.com/builds/, select "Windows 64-bit" then click on Download Build
-
-    2. Create a folder in `C:` like this `C:/ffmpeg` and extract the content of the zip file so it looks like this:
-    ```
-    C:/ffmpeg/presets
-    C:/ffmpeg/doc
-    C:/ffmpeg/bin
-    C:/ffmpeg/README.txt
-    C:/ffmpeg/LICENSE.txt
-    ```
-
-    3. Now add `C:/ffmpeg/bin` to the PATH:
-
-        1. Open the Environment Variables window:
-    
-        2. Press `Win + R` and paste in `rundll32.exe sysdm.cpl,EditEnvironmentVariables` and hit ok
-  
-        3. In `User variables for {username}` double click on `Path`
-
-        4. In the new window, click on `New` and type in `C:\ffmpeg\bin\` and hit enter, now hit `OK` on the open windows
-
-4. API tokens:
+3. API tokens:
 
     1. In /settings/config.json, edit the "INSERT DISCORD TOKEN" with your own discord token:
          1. Go to https://discordapp.com/developers/applications/
