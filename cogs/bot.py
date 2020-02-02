@@ -109,8 +109,8 @@ async def check_for_update():
 						"\nPlease run \"(prefix)update\" in order to automatically update." +
 						"\nDon't forget to check the console output to see if the update went well.")
 			print(f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
-						"\n Please run \"(prefix)update\" in order to automatically update." +
-						"\nDon't forget to check the console output to see if the update went well.")
+						"\n\tPlease run \"(prefix)update\" in order to automatically update." +
+						"\n\tDon't forget to check the console output to see if the update went well.")
 	except Exception as e:
 		print(e)
 

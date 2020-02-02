@@ -37,7 +37,7 @@ if __name__ == "__main__":
 		print("Passed Git checks...")
 
 		# Check that the current working directory is clean
-		status = subprocess.check_output('git status --porcelain', shell=True, universal_newlines=True)
+		status = subprocess.check_output('git status --porcelain --assume-unchanged cogs/custom.py', shell=True, universal_newlines=True)
 		if status:
 			raise OSError("You have modified files that are tracked by Git (e.g the bot\'s source files).\nYou'll have to update the bot manually")
 
