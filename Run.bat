@@ -12,7 +12,8 @@ GOTO Run
 :InstallPipenv
 @echo pipenv not found, installing...
 @echo.
-pip install pipenv
+python -m pip --disable-pip-version-check install pipenv > tmpFile
+del tmpFile
 @echo.
 
 :Run
@@ -21,7 +22,7 @@ pip install pipenv
 
 if exist "Pipfile.lock" GOTO Dependencies
 
-@echo Creating Pipfile.lock...
+@echo Creating Pipfile.lock, this might take a minute...
 
 pipenv lock > tmpFile 2>&1
 del tmpFile
