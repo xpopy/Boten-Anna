@@ -6,6 +6,7 @@ import asyncio
 
 import discord
 from discord.ext import commands
+from discord.ext import tasks
 from requests import get as requestGet
 from tendo import singleton
 
@@ -79,6 +80,30 @@ async def log_to_console(ctx):
 		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
 	return True
 	
+
+@tasks.loop(seconds=86400.0)
+async def check_for_update():
+	pass
+
+
+
+
+@bot.command()
+async def testawd(ctx, extension):
+	print("lol")
+
+
+
+@bot.command()
+@commands.is_owner()
+async def update(ctx):
+	global returnCode
+	returnCode = "update"
+	player = bot.get_cog('Music')
+	player.disconnect_all_players()
+	await ctx.send("Updating, brb :D")
+	return await ctx.bot.logout()
+
 
 @bot.command()
 @commands.is_owner()
@@ -227,7 +252,6 @@ async def on_ready():
 			 		+ f"https://discordapp.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=3501120&scope=bot")
 	else:
 		print('Guild list:')
-		print()
 		for guild in bot.guilds:
 			print(f"{guild.name}, {guild.id}")
 	print()
