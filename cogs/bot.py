@@ -80,22 +80,22 @@ async def log_to_console(ctx):
 		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
 	return True
 	
-
-@tasks.loop(seconds=20.0)
+@tasks.loop(seconds=30.0)
 async def check_for_update():
-	json_data = requestGet("https://raw.githubusercontent.com/xpopy/Boten-Anna/master/app.json").json()
-	onlineVersion = json_data['version']
-	currentVersion = 0
-	with open('app.json') as json_file:
-		data = json.load(json_file)
-		currentVersion = data['version']
-	if utils.versiontuple(onlineVersion) > utils.versiontuple(currentVersion):
-		#There's a new version, send a message to owner that the bot can be updated
-		info = await bot.application_info()
-		await info.owner.send("There's a new update available, please run (prefix)update in order to automatically update")
-		print("There's a new update available, please run (prefix)update in order to automatically update")
-
-
+	try:
+		json_data = requestGet("https://raw.githubusercontent.com/xpopy/Boten-Anna/master/app.json").json()
+		onlineVersion = json_data['version']
+		currentVersion = 0
+		with open('app.json') as json_file:
+			data = json.load(json_file)
+			currentVersion = data['version']
+		if utils.versiontuple(onlineVersion) > utils.versiontuple(currentVersion):
+			#There's a new version, send a message to owner that the bot can be updated
+			info = await bot.application_info()
+			await info.owner.send("There's a new update available, please run \"(prefix)update\" in order to automatically update")
+			print("There's a new update available, please run (prefix)update in order to automatically update")
+	except Exception as e:
+		print(e)
 
 @bot.command()
 async def testawd(ctx, extension):
