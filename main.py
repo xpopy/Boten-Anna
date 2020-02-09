@@ -18,10 +18,6 @@ if __name__ == "__main__":
 	os.environ['PATH'] += ';' + os.path.abspath('bin/')
 	sys.path.append(os.path.abspath('bin/'))
 
-
-	print( '\nNumber of arguments:', len(sys.argv), 'arguments.')
-	print( 'Argument List:', str(sys.argv))
-
 	action = None
 	channelID = None
 
