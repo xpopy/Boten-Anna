@@ -1,4 +1,7 @@
 
+on update, if the update failed with "already up to date" then send that back to the reply
+
+
 [ext.commands] Add support for calling a Command as a regular function.
 	specially for help
 	
