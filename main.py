@@ -59,7 +59,7 @@ if __name__ == "__main__":
 			print(text)
 
 			if not "Already up to date" in text:
-				print("\nUpdate successful! Loading...\n")
+				print("\nUpdate successful! Restarting...\n")
 
 		except subprocess.CalledProcessError:
 			raise OSError("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
