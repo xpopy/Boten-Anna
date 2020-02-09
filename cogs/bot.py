@@ -45,8 +45,14 @@ for filename in os.listdir(f'./{cogs_folder}'):
 			print(f'"{filename}" failed to load:')
 			print(f"\t{e}")
 
-async def exitWithCode(exitCode):
+async def exitWithCode(exitCode, ctx):
 	global returnCode
+	global restartReplyChannel
+
+	if ctx.guild is None:
+		restartReplyChannel = str(ctx.message.author.id)
+	else:
+		restartReplyChannel = str(ctx.channel.id)
 	returnCode = exitCode
 	player = bot.get_cog('Music')
 	player.disconnect_all_players()
@@ -153,10 +159,8 @@ async def check_for_update():
 @bot.command()
 @commands.is_owner()
 async def update(ctx):
-	global restartReplyChannel
-	restartReplyChannel = ctx.channel
 	await ctx.send("Updating, brb :D")
-	await exitWithCode("update")
+	await exitWithCode("update", ctx)
 
 
 @bot.command()
@@ -201,7 +205,7 @@ async def reload(ctx, extension = None):
 			print(e)
 		return
 	else:
-		await exitWithCode("restart")
+		await exitWithCode("restart", ctx)
 
 @bot.command(aliases=['setprofilepic'])
 @commands.is_owner()
@@ -282,7 +286,7 @@ async def help_(ctx, *args):
 @commands.is_owner()
 async def shutdown(ctx):
 	await ctx.send("Shutting down...")
-	await exitWithCode("exit")
+	await exitWithCode("exit", ctx)
 
 @bot.event
 async def on_ready():
@@ -312,14 +316,34 @@ async def on_ready():
 		for guild in bot.guilds:
 			print(f"{guild.name}, {guild.id}")
 	print()
+	
+	if restartReplyChannel is not None:
+		channel = bot.get_channel(int(restartReplyChannel))
+		print(channel)
+		if channel is None:
+			channel = bot.get_user(int(restartReplyChannel))
+			
+		if channel is not None:
+			if returnCode == "restart":
+				await channel.send("Succesfully restarted")
+			elif returnCode == "update":
+				await channel.send("Succesfully updated")
+
 	check_for_update.start()
 
 	
 
 
-def run():
+def run(action = "exit", channelID = None):
 	try:
+		global returnCode
+		global restartReplyChannel
+
 		me = singleton.SingleInstance() 
+
+		returnCode = action
+		restartReplyChannel = channelID
+
 		bot.run(utils.getConfig('token'))
 
 		print()
@@ -327,7 +351,7 @@ def run():
 		print()
 
 		del me
-		return returnCode
+		return returnCode, restartReplyChannel
 		
 	except Exception as e:
 		if isinstance(e, discord.errors.LoginFailure):

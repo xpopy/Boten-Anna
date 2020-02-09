@@ -18,8 +18,16 @@ if __name__ == "__main__":
 	os.environ['PATH'] += ';' + os.path.abspath('bin/')
 	sys.path.append(os.path.abspath('bin/'))
 
+
+	print( '\nNumber of arguments:', len(sys.argv), 'arguments.')
+	print( 'Argument List:', str(sys.argv))
+
+	if len(sys.argv) == 3:
+		action = sys.argv[1]
+		channelID = sys.argv[2]
+
 	try:
-		exitCode = bot.run()
+		exitCode, channelID = bot.run(action, channelID)
 	except Exception as e:
 		print(e)
 
@@ -58,7 +66,7 @@ if __name__ == "__main__":
 			raise OSError("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
 							"You will need to run 'git pull' yourself or manually update the files.")
 
-		subprocess.call([sys.executable, "main.py"])
+		subprocess.call([sys.executable, "main.py", exitCode, channelID ])
 
 
 	if exitCode == "restart":
@@ -66,4 +74,4 @@ if __name__ == "__main__":
 		print("Restarting Bot")
 		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
 		print()
-		subprocess.call([sys.executable, "main.py"])
+		subprocess.call([sys.executable, "main.py", exitCode, channelID])
