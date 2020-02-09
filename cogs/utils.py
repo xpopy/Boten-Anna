@@ -42,8 +42,7 @@ async def determine_prefix(bot, message):
 	if message.guild:
 		return getServerSetting(message.guild.id, "prefix")
 	else:
-		return getConfig("prefix")
-
+		return ""
 def getConfig(key):
 	''' Returns the bot config if it exists, otherwise generate it '''
 	global configCache

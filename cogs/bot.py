@@ -25,6 +25,7 @@ if utils.getConfig('token') == "PUT_DISCORD_TOKEN_HERE": # Don't actually put yo
 uptime = time.time()
 hasSentUpdateNotification = False
 returnCode = "exit"
+restartReplyChannel = None
 bot = commands.Bot(command_prefix=utils.determine_prefix)
 
 #Make sure cogs folder exists
@@ -77,15 +78,47 @@ async def on_command_error(ctx, error):
 		raise(error)
 
 
-
+#Disabled
+'''
 @bot.check
 async def globally_block_dms(ctx):
-	return ctx.guild is not None
+	if ctx.guild is not None:
+		return True
+	else:
+		if ctx.command == "update" or ctx.command == "help":
+			return True
+		else:
+			return False
+'''
 
+@bot.event
+async def on_message(message):
+	if message.author == bot.user:
+		return
+	if message.guild is None:
+		if (message.content.startswith('update') or 
+		   message.content.startswith('restart') or 
+		   message.content.startswith('reload') or 
+		   message.content.startswith('help')):
+			await bot.process_commands(message)
+		else:
+			info = await bot.application_info()
+			if message.author == info.owner:
+				await message.channel.send("I only respond to `help` or `update` without any prefixes")
+			else:
+				await message.channel.send("I only respond to `help` without any prefixes")
+	else:
+		await bot.process_commands(message)
+
+		
 @bot.check
 async def log_to_console(ctx):
 	if not ctx.invoked_subcommand:
-		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
+		msg = ctx.message
+		if ctx.guild is None:
+			print(f'{msg.created_at}, DM, User: {msg.author}: {msg.content}')
+		else:
+			print(f'{msg.created_at}, Server: {msg.guild.name}, User: {msg.author}: {msg.content}')
 	return True
 	
 @tasks.loop(seconds=86400.0)
@@ -106,9 +139,9 @@ async def check_for_update():
 				info = await bot.application_info()
 				hasSentUpdateNotification = True
 
-				updateString = f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
+				updateString = (f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
 							"\nPlease run \"(prefix)update\" in order to automatically update." +
-							"\nDon't forget to check the console output to see if the update went well."
+							"\nDon't forget to check the console output to see if the update went well.\n")
 
 				await info.owner.send(updateString)
 				print(updateString)
@@ -120,6 +153,8 @@ async def check_for_update():
 @bot.command()
 @commands.is_owner()
 async def update(ctx):
+	global restartReplyChannel
+	restartReplyChannel = ctx.channel
 	await ctx.send("Updating, brb :D")
 	await exitWithCode("update")
 
@@ -286,6 +321,10 @@ def run():
 	try:
 		me = singleton.SingleInstance() 
 		bot.run(utils.getConfig('token'))
+
+		print()
+		print(restartReplyChannel)
+		print()
 
 		del me
 		return returnCode

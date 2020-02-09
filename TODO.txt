@@ -1,4 +1,7 @@
 
+Save which channel the !update/restart message came from and reply to it once restart is done
+
+
 [ext.commands] Add support for calling a Command as a regular function.
 	specially for help
 	
