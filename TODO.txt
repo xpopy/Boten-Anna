@@ -1,5 +1,8 @@
 
 on update, if the update failed with "already up to date" then send that back to the reply
+auto updating doesn't work
+	either reset from master
+	or restart bot afterwards and tell owner to update manually
 
 
 [ext.commands] Add support for calling a Command as a regular function.
