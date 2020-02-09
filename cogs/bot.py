@@ -88,31 +88,33 @@ async def log_to_console(ctx):
 		print('{0.created_at}, Server: {0.guild.name}, User: {0.author}: {0.content}'.format(ctx.message))
 	return True
 	
-#@tasks.loop(seconds=86400.0)
-@tasks.loop(seconds=30.0)
+@tasks.loop(seconds=86400.0)
 async def check_for_update():
 	global hasSentUpdateNotification
-	try:
+	if not hasSentUpdateNotification:
+		try:
+			json_data = requestGet("https://raw.githubusercontent.com/xpopy/Boten-Anna/master/app.json").json()
+			onlineVersion = json_data['version']
+			currentVersion = 0
 
-		json_data = requestGet("https://raw.githubusercontent.com/xpopy/Boten-Anna/master/app.json").json()
-		onlineVersion = json_data['version']
-		currentVersion = 0
-		with open('app.json') as json_file:
-			data = json.load(json_file)
-			currentVersion = data['version']
-		if utils.versiontuple(onlineVersion) > utils.versiontuple(currentVersion):
-			#There's a new version, send a message to owner that the bot can be updated
-			info = await bot.application_info()
-			if not hasSentUpdateNotification:
+			with open('app.json') as json_file:
+				data = json.load(json_file)
+				currentVersion = data['version']
+
+			if utils.versiontuple(onlineVersion) > utils.versiontuple(currentVersion):
+				#There's a new version, send a message to owner that the bot can be updated
+				info = await bot.application_info()
 				hasSentUpdateNotification = True
-				await info.owner.send(f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
-						"\nPlease run \"(prefix)update\" in order to automatically update." +
-						"\nDon't forget to check the console output to see if the update went well.")
-			print(f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
-						"\n\tPlease run \"(prefix)update\" in order to automatically update." +
-						"\n\tDon't forget to check the console output to see if the update went well.")
-	except Exception as e:
-		print(e)
+
+				updateString = f"There's a new version available: {onlineVersion}, your version: {currentVersion}" +
+							"\nPlease run \"(prefix)update\" in order to automatically update." +
+							"\nDon't forget to check the console output to see if the update went well."
+
+				await info.owner.send(updateString)
+				print(updateString)
+
+		except Exception as e:
+			print(e)
 
 
 @bot.command()
