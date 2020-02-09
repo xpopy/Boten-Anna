@@ -22,6 +22,9 @@ if __name__ == "__main__":
 	print( '\nNumber of arguments:', len(sys.argv), 'arguments.')
 	print( 'Argument List:', str(sys.argv))
 
+	action = None
+	channelID = None
+
 	if len(sys.argv) == 3:
 		action = sys.argv[1]
 		channelID = sys.argv[2]
