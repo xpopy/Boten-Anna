@@ -51,6 +51,17 @@ class SongQueue:
 	play: list = field(default_factory=list)
 	default: list = field(default_factory=list)
 
+	def pop(self):
+		if self.playnow:
+			return self.playnow.pop(0)
+		elif self.playnext:
+			return self.playnext.pop(0)
+		elif self.play:
+			return self.play.pop(0)
+		elif self.default:
+			return self.default.pop(0)
+		else:
+			return None
 	def __iter__(self):
 		return iter(self.playnow + self.playnext + self.play + self.default)
 	def __len__(self):
@@ -462,6 +473,7 @@ class MusicPlayer:
 								await self.destroy(self._guild) 
 								await self.playNext.wait()
 								self.playNext.clear()
+						
 							elif self.processedQueue.playnow:
 								songObj = self.processedQueue.playnow.pop(0)
 								break
