@@ -3,10 +3,11 @@ from discord.ext import commands
 from requests import get as requestGet
 from urllib import parse as urlParse
 from random import randrange, shuffle, randint, choice as randElement
+import wikipedia
+import wikipediaapi
 import asyncio
 import json
 import sys
-
 
 sys.path.append('./cogs')
 import utils
@@ -62,6 +63,16 @@ class Fun(commands.Cog):
 
 	def __init__(self, bot):
 		self.bot = bot
+
+	@commands.command(aliases=['wikipedia'])
+	async def wiki(self, ctx, *, searchTerm):
+		# Yes I use both "wikipedia" and "wikipedia-api" apis, deal with it
+		wikiTerm = wikipedia.search(searchTerm)[0]
+		print(wikiTerm)
+		wiki_search = wikipediaapi.Wikipedia('en')
+		r = wiki_search.page(wikiTerm)
+		embed = discord.Embed(title="Wikipedia: " + r.title.capitalize(), url=r.fullurl, description = r.summary[0:310] + "...")
+		await ctx.send(embed=embed)
 
 	@commands.command(aliases=['flip', 'coin'])
 	async def coinflip(self, ctx):
@@ -141,6 +152,10 @@ class Fun(commands.Cog):
 			await tenorAPI(ctx, "anime lick", f"**{ctx.author.mention} licks themself**")
 		else:
 			await tenorAPI(ctx, "anime lick", f"**{ctx.author.mention} licks {user.mention}**")
+
+	@commands.command()
+	async def flex(self, ctx):
+		await tenorAPI(ctx, "anime flex", f"**{ctx.author.mention} flexes**")
 
 	@commands.command()
 	async def highfive(self, ctx, *, user: discord.Member = None):

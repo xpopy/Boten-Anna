@@ -110,7 +110,7 @@ async def on_message(message):
 		else:
 			info = await bot.application_info()
 			if message.author == info.owner:
-				await message.channel.send("I only respond to `help` or `update` without any prefixes")
+				await message.channel.send("I only respond to `help`, `update` or `restart` without any prefixes")
 			else:
 				await message.channel.send("I only respond to `help` without any prefixes")
 	else:
@@ -319,7 +319,6 @@ async def on_ready():
 	
 	if restartReplyChannel is not None:
 		channel = bot.get_channel(int(restartReplyChannel))
-		print(channel)
 		if channel is None:
 			channel = bot.get_user(int(restartReplyChannel))
 			
@@ -345,10 +344,6 @@ def run(action = "exit", channelID = None):
 		restartReplyChannel = channelID
 
 		bot.run(utils.getConfig('token'))
-
-		print()
-		print(restartReplyChannel)
-		print()
 
 		del me
 		return returnCode, restartReplyChannel
