@@ -55,7 +55,10 @@ async def exitWithCode(exitCode, ctx):
 		restartReplyChannel = str(ctx.channel.id)
 	returnCode = exitCode
 	player = bot.get_cog('Music')
-	player.disconnect_all_players()
+	try:
+		player.disconnect_all_players()
+	except:
+		pass
 	return await bot.logout()
 
 

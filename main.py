@@ -65,7 +65,7 @@ if __name__ == "__main__":
 			raise OSError("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
 							"You will need to run 'git pull' yourself or manually update the files.")
 
-		subprocess.call([sys.executable, "main.py", exitCode, channelID ])
+		subprocess.call(["Run.bat", exitCode, channelID])
 
 
 	if exitCode == "restart":
@@ -73,4 +73,4 @@ if __name__ == "__main__":
 		print("Restarting Bot")
 		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
 		print()
-		subprocess.call([sys.executable, "main.py", exitCode, channelID])
+		subprocess.call(["Run.bat", exitCode, channelID])

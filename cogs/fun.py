@@ -68,7 +68,6 @@ class Fun(commands.Cog):
 	async def wiki(self, ctx, *, searchTerm):
 		# Yes I use both "wikipedia" and "wikipedia-api" apis, deal with it
 		wikiTerm = wikipedia.search(searchTerm)[0]
-		print(wikiTerm)
 		wiki_search = wikipediaapi.Wikipedia('en')
 		r = wiki_search.page(wikiTerm)
 		embed = discord.Embed(title="Wikipedia: " + r.title.capitalize(), url=r.fullurl, description = r.summary[0:310] + "...")

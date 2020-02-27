@@ -6,7 +6,9 @@ pip --disable-pip-version-check list | findstr pipenv > tmpFile
 set /p myvar= < tmpFile 
 del tmpFile 
 
-@echo. Loading bot
+
+
+@echo Loading bot
 @echo. 
 
 if "%myvar%" == "" GOTO InstallPipenv
@@ -41,5 +43,16 @@ del tmpFile
 @echo Done, launching bot
 @echo.
 
+
+
+IF %1.==. GOTO NoParam
+IF %2.==. GOTO NoParam
+
+pipenv run python "main.py" %1 %2
+GOTO End1
+
+:NoParam
 pipenv run python "main.py"
+
+:End1
 pause
