@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from requests import get as requestGet
 from urllib import parse as urlParse
+from bs4 import BeautifulSoup as bs4Soup
 from random import randrange, shuffle, randint, choice as randElement
 import wikipedia
 import wikipediaapi
@@ -13,6 +14,56 @@ sys.path.append('./cogs')
 import utils
 
 nekoApiUrl = "https://nekos.life/api/v2/"
+
+def MAL_scrape(term):
+	""" Scrapes the MyAnimeList site for animes """
+	# Search for term
+	query_string = urlParse.urlencode({"q": term})
+	text = requestGet("https://myanimelist.net/search/all?" + query_string).text
+	soup = bs4Soup(text, features="html.parser")
+	
+	# Select the first result
+	div = soup.select("article")[0]
+	url = div.select(".information > a")[0]['href']
+
+	# Go to anime page
+	text = requestGet(url).text
+	soup = bs4Soup(text, features="html.parser")
+	sidebar = soup.select(".borderClass > .js-scrollfix-bottom")[0]
+
+	if not soup.select(".title-english"):
+		title = soup.select(".h1-title > span")[0].text
+	else:
+		title = soup.select(".title-english")[0].text
+
+	score = soup.select(".score")[0].text.replace(" ", "").split("\n")[1]
+	status = sidebar.select("span:contains('Status:')")[0].parent.text.split('\n  ')[1]
+	aired = sidebar.select("span:contains('Aired:')")[0].parent.text.split('\n  ')[1]
+	episodes = sidebar.select("span:contains('Episodes:')")[0].parent.text.split('\n  ')[1]
+	genresList = sidebar.select("span:contains('Genres:')")[0].parent.select("a")
+	genresList2 = []
+	for g in genresList:
+		genresList2 += [g.text]
+	genres = (", ").join(genresList2)
+
+	thumbnail = sidebar.select("img")[0]['data-src']
+
+	
+	description = ""
+
+	if status == "Currently Airing":
+		status = "Airing"
+	elif status == "Finished Airing":
+		status = "Finished"
+	if score != "N/A":
+		description += f"**Score:** {score} | "
+	if episodes != "Unknown":
+		description += f"**Episodes:** {episodes} \n "
+	
+	description += f"**Status:** {status} | **Aired:** {aired} \n"
+	description += f"**Genres:** {genres}"
+
+	return title, url, description, thumbnail
 
 async def nekosAPI(ctx, category, message):
 	if category == 'fact':
@@ -63,6 +114,13 @@ class Fun(commands.Cog):
 
 	def __init__(self, bot):
 		self.bot = bot
+
+	@commands.command(aliases=['mal'])
+	async def anime(self, ctx, *, searchTerm):
+		title, url, description, thumbnail = MAL_scrape(searchTerm)
+		embed = discord.Embed(title=title, url=url, description = description)
+		embed.set_thumbnail(url=thumbnail)
+		await ctx.send(embed=embed)
 
 	@commands.command(aliases=['wikipedia'])
 	async def wiki(self, ctx, *, searchTerm):

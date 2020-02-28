@@ -1,13 +1,21 @@
+rewrite  update_now_playing
+when stopping, clean up now_playing message
+
+help for playlist download
+
+move tenor and nekos to utils and import utils in custom.py
+	fix tons of imports as well
+
+!update doesn't work if you download as zip file
 
 on update, if the update failed with "already up to date" then send that back to the reply
-auto updating doesn't work
-	either reset from master
-	or restart bot afterwards and tell owner to update manually
 
 
+REWRITE help, automatically get commands from custom.py and their description
 [ext.commands] Add support for calling a Command as a regular function.
 	specially for help
-	
+
+Try out youtube api for searching and for getting playlist songs	
 set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
 maybe use threads for updating files https://stackoverflow.com/a/35240362
 

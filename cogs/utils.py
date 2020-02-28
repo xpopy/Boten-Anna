@@ -421,7 +421,7 @@ async def helpFunction(ctx, helpCommand=None):
 	funCommandList = ["8ball", "coinflip", "kiss", "hug", "poke",
 					"feed", "cuddle", "slap", "pat", "tickle", 
 					"smug", "lick", "highfive", "uwu", "fact", 
-					"oof", "rekt", "dadjoke"]
+					"oof", "rekt", "dadjoke", "wiki", "anime"]
 
 	commandList = 	["join", "play", "playnext",  
 						"volume",  "pause", "resume", "remove", "skip",
@@ -686,6 +686,14 @@ async def helpFunction(ctx, helpCommand=None):
 		elif helpCommand == "update":
 			commandSyntax += "update"
 			description += "Updates the bot if there any and then restarts"
+
+		elif helpCommand == "wiki":
+			commandSyntax += "wiki searchTerm"
+			description += "Displays a short summary of a wikipage"
+		
+		elif helpCommand == "anime":
+			commandSyntax += "anime searchTerm"
+			description += "Displays stats about an anime"
 		
 		commandSyntax += "`\n\n"
 		embed = discord.Embed(description=commandSyntax + description)

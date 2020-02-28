@@ -299,7 +299,7 @@ class Music(commands.Cog):
 	@commands.check(is_accepted_text_channel)
 	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
-	async def play_(self, ctx,  *args):
+	async def play_(self, ctx, *args):
 		if len(args) == 0:
 			defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
 			if len(defaultPlaylist) == 0:
