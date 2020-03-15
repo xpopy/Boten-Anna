@@ -331,7 +331,7 @@ async def on_ready():
 			elif returnCode == "update":
 				await channel.send("Succesfully updated")
 
-	check_for_update.start()
+	check_for_update.restart()
 
 	
 
