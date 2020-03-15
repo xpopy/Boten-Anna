@@ -55,4 +55,3 @@ GOTO End1
 pipenv run python "main.py"
 
 :End1
-pause
