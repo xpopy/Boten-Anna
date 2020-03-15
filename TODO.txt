@@ -1,11 +1,15 @@
-crashes when lost connection
+REWRITE help, automatically get commands from custom.py and their description
+read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
+	show subscommands in the main help menu
+	maybe rewrite help as a dictionary with categories, commands, short description and a long description
+	https://i.imgur.com/L2Z3IYo.png
+	Move it to initialize so it doesn't have to create it every time we want to check help
+
 
 !update doesn't work if you download as zip file
 
 on update, if the update failed with "already up to date" then send that back to the reply
 
-
-REWRITE help, automatically get commands from custom.py and their description
 [ext.commands] Add support for calling a Command as a regular function.
 	specially for help
 
@@ -27,11 +31,6 @@ replace prints with some sort of logging
 typing in !play/!pause will make the np message sticky instantly
 Write a short documentation on what functions do
 
-read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
-	show subscommands in the main help menu
-	maybe rewrite help as a dictionary with categories, commands, short description and a long description
-	https://i.imgur.com/L2Z3IYo.png
-	Move it to initialize so it doesn't have to create it every time we want to check help
 
 re-enable playing playlists
 	best would probably be to webscrape the playlist to get all info
