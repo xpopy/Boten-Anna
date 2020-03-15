@@ -13,7 +13,7 @@ import sys
 sys.path.append('./cogs')
 import utils
 
-nekoApiUrl = "https://nekos.life/api/v2/"
+
 
 def MAL_scrape(term):
 	""" Scrapes the MyAnimeList site for animes """
@@ -65,42 +65,6 @@ def MAL_scrape(term):
 
 	return title, url, description, thumbnail
 
-async def nekosAPI(ctx, category, message):
-	if category == 'fact':
-		text = requestGet(nekoApiUrl + "fact").json()['fact']
-		await ctx.send(content= "`" + text + "`")
-	else:
-		url = requestGet(nekoApiUrl + category).json()['url']
-		embed = discord.Embed(description = message)
-		embed.set_image(url=url)
-		embed.set_footer(text="Made with the help of nekos.life")
-
-		await ctx.send(embed=embed)
-
-async def tenorAPI(ctx, searchTerm, text):
-	# set the apikey and limit
-	apikey = utils.getConfig('tenor_key')
-	lmt = 20
-
-	# get the top 20 GIFs for the search term
-	r = requestGet(
-		"https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (searchTerm, apikey, lmt))
-
-	if r.status_code == 200:
-		gif = json.loads(r.content)["results"][randrange(lmt)]
-		if imgFormat := gif["media"][0].get("gif"):
-			url = imgFormat["url"]
-		elif imgFormat := gif["media"][0].get("tinygif"):
-			url = imgFormat["url"]
-	else:
-		print("ERROR: Get Request of Tenor returned a non 200 status code")
-		return None
-
-	embed = discord.Embed(description = text)
-	embed.set_image(url=url)
-	embed.set_footer(text="Made with the help of tenor.com")
-	await ctx.send(embed=embed)
-
 def checkHighfive(first_poster, original_channel, prefix):
 	def inner_check(message):
 		if message.channel == original_channel and f"{prefix}highfive" in message.content:
@@ -128,7 +92,7 @@ class Fun(commands.Cog):
 		wikiTerm = wikipedia.search(searchTerm)[0]
 		wiki_search = wikipediaapi.Wikipedia('en')
 		r = wiki_search.page(wikiTerm)
-		embed = discord.Embed(title="Wikipedia: " + r.title.capitalize(), url=r.fullurl, description = r.summary[0:310] + "...")
+		embed = discord.Embed(title="Wikipedia: " + r.title.capitalize(), url=r.fullurl, description = r.summary[0:500] + "...")
 		await ctx.send(embed=embed)
 
 	@commands.command(aliases=['flip', 'coin'])
@@ -144,75 +108,70 @@ class Fun(commands.Cog):
 		if question[-1] != "?":
 			return await ctx.send(content="That doesn't look like a question, didn't you learn punctuation in school?")
 		
-		response = requestGet(nekoApiUrl + "8ball").json()['response']
-		await ctx.send(content = "`" + response + "`")
+		await utils.nekosAPI(ctx, "8ball", None)
 
 	@commands.command()
 	async def kiss(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
 			return await ctx.send(content = f"You can't kiss yourself you dummy")
 
-		await nekosAPI(ctx, "img/kiss", f"**{ctx.author.mention} kisses {user.mention}**")
+		await utils.nekosAPI(ctx, "img/kiss", f"**{ctx.author.mention} kisses {user.mention}**")
 
 	@commands.command()
 	async def hug(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/hug", f"**{ctx.author.mention} hugs themself**")
+			await utils.nekosAPI(ctx, "img/hug", f"**{ctx.author.mention} hugs themself**")
 		else:
-			await nekosAPI(ctx, "img/hug", f"**{ctx.author.mention} hugs {user.mention}**")
+			await utils.nekosAPI(ctx, "img/hug", f"**{ctx.author.mention} hugs {user.mention}**")
 
 	@commands.command()
 	async def poke(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/poke", f"**{ctx.author.mention} pokes themself**")
+			await utils.nekosAPI(ctx, "img/poke", f"**{ctx.author.mention} pokes themself**")
 		else:
-			await nekosAPI(ctx, "img/poke", f"**{ctx.author.mention} pokes {user.mention}**")
+			await utils.nekosAPI(ctx, "img/poke", f"**{ctx.author.mention} pokes {user.mention}**")
 
 	@commands.command()
 	async def feed(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/feed", f"**{ctx.author.mention} feeds themself**")
+			await utils.nekosAPI(ctx, "img/feed", f"**{ctx.author.mention} feeds themself**")
 		else:
-			await nekosAPI(ctx, "img/feed", f"**{ctx.author.mention} feeds {user.mention}**")
+			await utils.nekosAPI(ctx, "img/feed", f"**{ctx.author.mention} feeds {user.mention}**")
 
 	@commands.command()
 	async def cuddle(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/cuddle", f"**{ctx.author.mention} cuddles themself**")
+			await utils.nekosAPI(ctx, "img/cuddle", f"**{ctx.author.mention} cuddles themself**")
 		else:
-			await nekosAPI(ctx, "img/cuddle", f"**{ctx.author.mention} cuddles {user.mention}**")
+			await utils.nekosAPI(ctx, "img/cuddle", f"**{ctx.author.mention} cuddles {user.mention}**")
 
 	@commands.command()
 	async def slap(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/slap", f"**{ctx.author.mention} slaps themself**")
+			await utils.nekosAPI(ctx, "img/slap", f"**{ctx.author.mention} slaps themself**")
 		else:
-			await nekosAPI(ctx, "img/slap", f"**{ctx.author.mention} slaps {user.mention}**")
+			await utils.nekosAPI(ctx, "img/slap", f"**{ctx.author.mention} slaps {user.mention}**")
 
 	@commands.command()
 	async def pat(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} pats themself**")
+			await utils.nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} pats themself**")
 		else:
-			await nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} pats {user.mention}**")
+			await utils.nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} pats {user.mention}**")
 
 	@commands.command()
 	async def tickle(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} tickles themself**")
+			await utils.nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} tickles themself**")
 		else:
-			await nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} tickles {user.mention}**")
+			await utils.nekosAPI(ctx, "img/pat", f"**{ctx.author.mention} tickles {user.mention}**")
 
 	@commands.command()
 	async def lick(self, ctx, *, user: discord.Member):
 		if user == ctx.author:
-			await tenorAPI(ctx, "anime lick", f"**{ctx.author.mention} licks themself**")
+			await utils.tenorAPI(ctx, "anime lick", f"**{ctx.author.mention} licks themself**")
 		else:
-			await tenorAPI(ctx, "anime lick", f"**{ctx.author.mention} licks {user.mention}**")
-
-	@commands.command()
-	async def flex(self, ctx):
-		await tenorAPI(ctx, "anime flex", f"**{ctx.author.mention} flexes**")
+			await utils.tenorAPI(ctx, "anime lick", f"**{ctx.author.mention} licks {user.mention}**")
 
 	@commands.command()
 	async def highfive(self, ctx, *, user: discord.Member = None):
@@ -257,37 +216,27 @@ class Fun(commands.Cog):
 						text = f"**{message.author.mention} high fives {ctx.author.mention}**"
 						
 		#High five text is done, time to get the gif and post it
-		await tenorAPI(ctx, "anime highfive", text)
+		await utils.tenorAPI(ctx, "anime highfive", text)
+
+	@commands.command()
+	async def flex(self, ctx):
+		await utils.tenorAPI(ctx, "anime flex", f"**{ctx.author.mention} flexes**")
+
+	@commands.command()
+	async def cry(self, ctx):
+		await utils.tenorAPI(ctx, "anime cry", f"**{ctx.author.mention} cries**")
 
 	@commands.command(aliases=["owo"])
 	async def uwu(self, ctx, *, message = None):
-		if message:
-			urlString = urlParse.quote(message, safe='')
-			text = requestGet(nekoApiUrl + "owoify" + "?text=" + urlString).json()['owo']
-		else:
-			#get previous message and uwuify that
-			messages = await ctx.channel.history(limit=5).flatten()
-			isAfterOP = False
-			for message in messages:
-				if isAfterOP:
-					#This is the message we want
-					urlString = urlParse.quote(message.content, safe='')
-					text = requestGet(nekoApiUrl + "owoify" + "?text=" + urlString).json()['owo']
-					break
-				elif message.author == ctx.author:
-					isAfterOP = True
-
-		uwuFaces = ["^~^", "UwU", "OwO", "oWo", "OvO", "UvU", "*~*", ":3", "=3", "<(^V^<)"]
-
-		await ctx.send(content=text + " " + randElement(uwuFaces))
+		await utils.nekosAPI(ctx, "uwu", message)
 
 	@commands.command()
 	async def smug(self, ctx):
-		await nekosAPI(ctx, "img/smug", f"**{ctx.author.mention} is being smug**")
+		await utils.nekosAPI(ctx, "img/smug", f"**{ctx.author.mention} is being smug**")
 
 	@commands.command()
 	async def fact(self, ctx):
-		await nekosAPI(ctx, "fact", None)
+		await utils.nekosAPI(ctx, "fact", None)
 
 	@commands.command()
 	async def oof(self, ctx):

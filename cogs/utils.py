@@ -5,6 +5,7 @@ import time
 from subprocess import PIPE as subprocPIPE
 from subprocess import STDOUT as subprocSTDOUT
 from subprocess import Popen as subprocPopen
+from random import randrange, shuffle, randint, choice as randElement
 from urllib import parse as urlParse
 
 import discord
@@ -415,6 +416,65 @@ async def bookList(channel, mPlayer, func, playList, itemsPerPage=5):
 				embed.set_footer(text=f"Page {pageIndex}/{pages}")
 				await message.edit(embed=embed)
 
+async def nekosAPI(ctx, category, message):
+	nekoApiUrl = "https://nekos.life/api/v2/"
+	if category == 'fact':
+		text = requestGet(nekoApiUrl + "fact").json()['fact']
+		await ctx.send(content= "`" + text + "`")
+	elif category == '8ball':
+		response = requestGet(nekoApiUrl + "8ball").json()['response']
+		await ctx.send(content = "`" + response + "`")
+	elif category == 'uwu':
+		if message:
+			urlString = urlParse.quote(message, safe='')
+			text = requestGet(nekoApiUrl + "owoify" + "?text=" + urlString).json()['owo']
+		else:
+			#get previous message and uwuify that
+			messages = await ctx.channel.history(limit=5).flatten()
+			isAfterOP = False
+			for message in messages:
+				if isAfterOP:
+					#This is the message we want
+					urlString = urlParse.quote(message.content, safe='')
+					text = requestGet(nekoApiUrl + "owoify" + "?text=" + urlString).json()['owo']
+					break
+				elif message.author == ctx.author:
+					isAfterOP = True
+
+		uwuFaces = ["^~^", "UwU", "OwO", "oWo", "OvO", "UvU", "*~*", ":3", "=3", "<(^V^<)"]
+
+		await ctx.send(content=text + " " + randElement(uwuFaces))
+	else:
+		url = requestGet(nekoApiUrl + category).json()['url']
+		embed = discord.Embed(description = message)
+		embed.set_image(url=url)
+		embed.set_footer(text="Made with the help of nekos.life")
+
+		await ctx.send(embed=embed)
+
+async def tenorAPI(ctx, searchTerm, text):
+	# set the apikey and limit
+	apikey = getConfig('tenor_key')
+	lmt = 20
+
+	# get the top 20 GIFs for the search term
+	r = requestGet(
+		"https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (searchTerm, apikey, lmt))
+
+	if r.status_code == 200:
+		gif = json.loads(r.content)["results"][randrange(lmt)]
+		if imgFormat := gif["media"][0].get("gif"):
+			url = imgFormat["url"]
+		elif imgFormat := gif["media"][0].get("tinygif"):
+			url = imgFormat["url"]
+	else:
+		print("ERROR: Get Request of Tenor returned a non 200 status code")
+		return None
+
+	embed = discord.Embed(description = text)
+	embed.set_image(url=url)
+	embed.set_footer(text="Made with the help of tenor.com")
+	await ctx.send(embed=embed)
 
 async def helpFunction(ctx, helpCommand=None):
 	''' Generates a help message, if a helpCommand is given then it generates a help message specific for that command '''
@@ -500,6 +560,10 @@ async def helpFunction(ctx, helpCommand=None):
 			commandSyntax += "hug @user"
 			description += "Hugs the tagged user"
 
+		elif helpCommand == "cry":
+			commandSyntax += "cry"
+			description += "You cry"
+
 		elif helpCommand == "poke":
 			commandSyntax += "poke @user"
 			description += "Pokes the tagged user"
@@ -574,13 +638,14 @@ async def helpFunction(ctx, helpCommand=None):
 			description += "Skips the currently playing song to play the requested song"
 		
 		elif helpCommand == "playlist":
-			commandSyntax += "(playlist | pl) (clear | add song | remove song)"
+			commandSyntax += "(playlist | pl) (download | clear | add song | remove song)"
 			description += "Adds or removes songs from the default playlist (which plays when there's nothing else queued)\n\n"
 			description += "Note that a song cand be either a youtube url, a song name, or a link to a youtube playlist\n\n"
+			description += f"**Example:** `{prefix}playlist download` downloads and processes the default playlist\n"
 			description += f"**Example:** `{prefix}playlist clear` completely clears the default playlist\n"
 			description += f"**Example:** `{prefix}playlist add darude sandstorm` adds \"Darude Sandstorm\" to the default playlist\n"
 			description += f"**Example:** `{prefix}playlist remove darude sandstorm`, you guessed it, removes \"Darude Sandstorm\" from the default playlist"
-		
+
 		elif helpCommand == "volume":
 			commandSyntax += "(volume | vol | v) (volume)"
 			description += "Sets the volume for the bot. Run the command without an parameter and it will tell you the current volume"
@@ -652,10 +717,6 @@ async def helpFunction(ctx, helpCommand=None):
 			description += f"**Example:** `{prefix}musicvc add current` adds the voicechannel you're currently in \n"
 			description += f"**Example:** `{prefix}musicvc remove 653341521223090183` removes the channel with the ID \"653341521223090183\"\n"
 			description += f"**Example:** `{prefix}musicvc clear` will make the bot able to join all channels again"
-		
-		elif helpCommand == "download_default_playlist":
-			commandSyntax += "download_default_playlist"
-			description += "Downloads all songs that are in the default playlist and prepares them so that next time you play it will be instant"
 		
 		elif helpCommand == "prefix":
 			commandSyntax += "(prefix | annaprefix) new_prefix"
