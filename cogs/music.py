@@ -258,7 +258,8 @@ class Music(commands.Cog):
 			if len(vc.channel.members) == 1 and vc.channel.members[0] == self.bot.user:
 				mPlayer.stop_player = True
 				vc.stop()
-				await mPlayer.now_playing(channel=vc.channel)
+				await asyncio.sleep(0.5)
+				await mPlayer.now_playing()
 
 	@commands.Cog.listener()
 	async def on_reaction_add(self, reaction, user):
@@ -734,6 +735,7 @@ class Music(commands.Cog):
 		mPlayer.stop_player = True
 		mPlayer.playNext.set()
 		mPlayer._guild.voice_client.stop()
+		await asyncio.sleep(0.5)
 		await mPlayer.now_playing()
 
 

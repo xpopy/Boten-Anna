@@ -432,6 +432,7 @@ class MusicPlayer:
 			if msg:
 				await msg.edit(content="Player stopped", embed=None)
 				await utils.set_message_reactions(msg, [])
+				self.current_np_message = None
 			self.stop_update_np.set()
 
 
