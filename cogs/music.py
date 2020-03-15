@@ -201,14 +201,13 @@ class Music(commands.Cog):
 			return
 
 		if reaction.emoji == "⏭️":
-			await reaction.remove(user)
 			if vc and vc.source:	
 				vc.source.volume = 0
 				vc.stop()
 				await reaction.message.edit(content=f"{user.mention} skipped a song")
+			await reaction.remove(user)
 
 		elif reaction.emoji == "⏯️":
-			await reaction.remove(user)
 			if vc.is_paused():
 				vc.resume()
 				mPlayer.timeStarted = time.time() - mPlayer.timePaused
@@ -218,6 +217,7 @@ class Music(commands.Cog):
 				mPlayer.timePaused = time.time() - mPlayer.timeStarted
 				await reaction.message.edit(content=f"{user.mention} paused the player")
 			mPlayer.update_np.set()
+			await reaction.remove(user)
 		
 		elif reaction.emoji == "🔉":
 			newVolume = self.snapVolumeToSteps(mPlayer.volume, increase=False)
@@ -237,16 +237,18 @@ class Music(commands.Cog):
 		current = time.time()
 		if reaction.emoji == "🔉":
 			if current - self.lastReactDecrease > 3.8:
-				self.dontReact.set()
-				await reaction.remove(user)
-				await asyncio.sleep(1)
-				self.dontReact.clear()
+				if reaction.message:
+					self.dontReact.set()
+					await reaction.remove(user)
+					await asyncio.sleep(1)
+					self.dontReact.clear()
 		elif reaction.emoji == "🔊":
 			if current - self.lastReactIncrease > 3.8:
-				self.dontReact.set()
-				await reaction.remove(user)
-				await asyncio.sleep(1)
-				self.dontReact.clear()
+				if reaction.message:
+					self.dontReact.set()
+					await reaction.remove(user)
+					await asyncio.sleep(1)
+					self.dontReact.clear()
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
@@ -256,6 +258,7 @@ class Music(commands.Cog):
 			if len(vc.channel.members) == 1 and vc.channel.members[0] == self.bot.user:
 				mPlayer.stop_player = True
 				vc.stop()
+				await mPlayer.now_playing(channel=vc.channel)
 
 	@commands.Cog.listener()
 	async def on_reaction_add(self, reaction, user):
@@ -293,7 +296,7 @@ class Music(commands.Cog):
 			await asyncio.sleep(1)
 			val = utils.getServerSetting(ctx.guild.id, 'nowPlayingAuto')
 			if val:
-				await mPlayer.now_playing(ctx.channel, preparing=True, forceSticky=True)
+				await mPlayer.now_playing(ctx.channel, preparing=True, sticky=True)
 
 	@commands.command(aliases=['play', 'p'])
 	@commands.check(is_accepted_text_channel)
@@ -316,7 +319,7 @@ class Music(commands.Cog):
 				await asyncio.sleep(1)
 				val = utils.getServerSetting(ctx.guild.id, 'nowPlayingAuto')
 				if val:
-					await mPlayer.now_playing(ctx.channel, preparing=True, forceSticky=True)
+					await mPlayer.now_playing(ctx.channel, preparing=True, sticky=True)
 
 	@commands.command(aliases=['playnext', 'pnext', 'pn'])
 	@commands.check(is_accepted_text_channel)
@@ -658,7 +661,7 @@ class Music(commands.Cog):
 		if ctx.invoked_subcommand is None:
 			if await is_bot_connected(ctx):
 				mPlayer = self.get_player(ctx.guild)
-				await mPlayer.now_playing(ctx.channel)
+				await mPlayer.now_playing(ctx.channel, sticky=True)
 
 	@nowplaying_.command()
 	@commands.check(is_dj)
@@ -731,6 +734,7 @@ class Music(commands.Cog):
 		mPlayer.stop_player = True
 		mPlayer.playNext.set()
 		mPlayer._guild.voice_client.stop()
+		await mPlayer.now_playing()
 
 
 	@commands.group(aliases=['musictc'])
