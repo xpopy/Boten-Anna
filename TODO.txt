@@ -1,10 +1,4 @@
-rewrite  update_now_playing
-when stopping, clean up now_playing message
-
-help for playlist download
-
-move tenor and nekos to utils and import utils in custom.py
-	fix tons of imports as well
+crashes when lost connection
 
 !update doesn't work if you download as zip file
 
