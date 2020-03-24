@@ -443,8 +443,9 @@ class Music(commands.Cog):
 		
 			data.append(url)
 			utils.updateServerPlaylist(server, data)
-			mPlayer.prepareQueue.default.append(url)
-			shuffle(mPlayer.prepareQueue.default)
+			if mPlayer.prepareQueue.default:
+				mPlayer.prepareQueue.default.append(url)
+				shuffle(mPlayer.prepareQueue.default)
 
 			embed = discord.Embed(title=title, url=url, description=f"have been added to the playlist")
 			embed.set_thumbnail(url=thumbnail)
