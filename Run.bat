@@ -1,5 +1,5 @@
 @echo off
-@echo Loading bot
+@echo Starting checks
 @echo. 
 
 
@@ -61,3 +61,4 @@ IF defined TRUE (
 ) else (
 	pipenv run python "main.py" %1 %2
 )
+pause

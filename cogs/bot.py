@@ -45,6 +45,7 @@ for filename in os.listdir(f'./{cogs_folder}'):
 		except Exception as e:
 			print(f'"{filename}" failed to load:')
 			print(f"\t{e}")
+print()
 
 async def exitWithCode(exitCode, ctx):
 	global returnCode
@@ -336,8 +337,6 @@ async def shutdown(ctx):
 
 @bot.event
 async def on_ready():
-	print()
-	
 	print("Loading done\n")
 	print("-------------------------------------\n")
 
@@ -384,7 +383,10 @@ def run(action = "exit", channelID = None):
 		global returnCode
 		global restartReplyChannel
 
-		me = singleton.SingleInstance() 
+		try:
+			me = singleton.SingleInstance() 
+		except singleton.SingleInstanceException as e:
+			return returnCode, restartReplyChannel
 
 		returnCode = action
 		restartReplyChannel = channelID
