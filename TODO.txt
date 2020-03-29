@@ -1,3 +1,4 @@
+test
 REWRITE help, automatically get commands from custom.py and their description
 read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
 	show subscommands in the main help menu
