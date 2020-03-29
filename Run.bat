@@ -3,7 +3,8 @@
 @echo. 
 
 
-:: Check for .git folder and install if not found ::
+:: Check for .git folder ::
+:: Install it by cloning the repository, moving the .git folder and then deleting the clone ::
 if not exist .git\NUL (
 	@echo .git folder not found (happens if you download as zip^)
 	@echo Installing .git (can take a minute depending on internet speeds^)

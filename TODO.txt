@@ -5,11 +5,6 @@ read into default help command https://discordpy.readthedocs.io/en/latest/ext/co
 	https://i.imgur.com/L2Z3IYo.png
 	Move it to initialize so it doesn't have to create it every time we want to check help
 
-
-!update doesn't work if you download as zip file
-
-on update, if the update failed with "already up to date" then send that back to the reply
-
 [ext.commands] Add support for calling a Command as a regular function.
 	specially for help
 
@@ -28,9 +23,7 @@ convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
 	Allows for seeking, set_eq
 
 replace prints with some sort of logging
-typing in !play/!pause will make the np message sticky instantly
 Write a short documentation on what functions do
-
 
 re-enable playing playlists
 	best would probably be to webscrape the playlist to get all info

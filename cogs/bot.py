@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import asyncio
+import subprocess
 
 import discord
 from discord.ext import commands
@@ -162,8 +163,50 @@ async def check_for_update():
 @bot.command()
 @commands.is_owner()
 async def update(ctx):
-	await ctx.send("Updating, brb :D")
-	await exitWithCode("update", ctx)
+	print("\nChecking for updates...\n")
+	gitDir = "./bin/git/cmd/git.exe"
+
+	#Make sure the .git folder exists
+	if not os.path.isdir('.git'):
+		await ctx.send("Can't automatically update due to missing .git folder, you will have to update manually.")
+		return
+
+	#Make sure the git.exe exists
+	if not os.path.exists('bin/git/cmd/git.exe'):
+		await ctx.send("Can't automatically update due to missing git.exe, you will have to update manually.")
+		return
+
+	# Make sure that we can actually use Git on the command line
+	try:
+		subprocess.call(f'{gitDir} --version', stdout=open(os.devnull, 'wb'))
+	except subprocess.CalledProcessError:
+		await ctx.send("Can't automatically update due to Git error, you will have to update manually.")
+		return
+		
+	#Ignoring changes done to the custom.py file so we don't overwrite it
+	subprocess.call(f'{gitDir} update-index --assume-unchanged cogs/custom.py', stdout=open(os.devnull, 'wb'))
+
+	#Try updating
+	try:
+		out = subprocess.check_output(f'{gitDir} pull')
+		text = out.decode("utf-8")
+		print(text)
+
+		if "Already up to date" in text:
+			await ctx.send("Already up to date")
+			return
+		else:
+			await ctx.send("Update successful! Restarting...")
+			await exitWithCode("restart", ctx)
+			return
+
+	except subprocess.CalledProcessError:
+		await ctx.send("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
+						"You will need to run 'git pull' yourself or manually update the files.")
+
+
+
+	
 
 
 @bot.command()
