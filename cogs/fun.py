@@ -219,6 +219,10 @@ class Fun(commands.Cog):
 		await utils.tenorAPI(ctx, "anime highfive", text)
 
 	@commands.command()
+	async def dab(self, ctx):
+		await utils.tenorAPI(ctx, "anime dab", f"**{ctx.author.mention} dabs**")
+
+	@commands.command()
 	async def flex(self, ctx):
 		await utils.tenorAPI(ctx, "anime flex", f"**{ctx.author.mention} flexes**")
 
