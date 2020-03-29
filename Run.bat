@@ -1,42 +1,49 @@
 @echo off
-@echo Checking for pipenv...
-
-
-pip --disable-pip-version-check list | findstr pipenv > tmpFile 
-set /p myvar= < tmpFile 
-del tmpFile 
-
-
-
 @echo Loading bot
 @echo. 
 
-if "%myvar%" == "" GOTO InstallPipenv
-GOTO Run
 
-:InstallPipenv
-@echo pipenv not found, installing...
-@echo.
-python -m pip --disable-pip-version-check install pipenv > tmpFile
-del tmpFile
-@echo.
+:: Check for .git folder and install if not found ::
+if not exist .git\NUL (
+	@echo .git folder not found (happens if you download as zip^)
+	@echo Installing .git (can take a minute depending on internet speeds^)
+	bin\git\cmd\git.exe clone https://github.com/xpopy/Boten-Anna.git > tmpFile 2>&1
+	attrib -h Boten-Anna\.git
+	move Boten-Anna\.git .git >nul
+	rmdir Boten-Anna\ /s /q
+	@echo  .git is installed
+	@echo.
+)
 
-:Run
-@echo Pipenv is installed!
+
+:: Check for pipenv and install if not found ::
+@echo Checking for pipenv...
+pip --disable-pip-version-check list | findstr pipenv > tmpFile 
+set /p myvar= < tmpFile 
+del tmpFile 
+if "%myvar%" == "" (
+	@echo pipenv not found, installing...
+	@echo.
+	python -m pip --disable-pip-version-check install pipenv > tmpFile
+	del tmpFile
+	@echo  pipenv is installed
+	@echo.
+)
 
 
-if exist "Pipfile.lock" GOTO Dependencies
+:: Create Pipfile.lock if it doesn't exist ::
+if not exist Pipfile.lock (
+	@echo Creating Pipfile.lock, this might take a minute...
+	pipenv lock > tmpFile 2>&1
+	del tmpFile
+	color 07
+)
 
-@echo Creating Pipfile.lock, this might take a minute...
 
-pipenv lock > tmpFile 2>&1
-del tmpFile
-color 07
-
-:Dependencies
+:: Check dependencies ::
 @echo Checking pipenv dependencies...
 pipenv install > tmpFile 2>&1
-del tmpFile 
+del tmpFile
 
 
 @echo.
@@ -44,14 +51,12 @@ del tmpFile
 @echo.
 
 
-
-IF %1.==. GOTO NoParam
-IF %2.==. GOTO NoParam
-
-pipenv run python "main.py" %1 %2
-GOTO End1
-
-:NoParam
-pipenv run python "main.py"
-
-:End1
+:: Run main program either without or with 2 argumnets ::
+set "TRUE="
+IF %1.==. set TRUE=1
+IF %2.==. set TRUE=1
+IF defined TRUE (
+	pipenv run python "main.py"
+) else (
+	pipenv run python "main.py" %1 %2
+)
