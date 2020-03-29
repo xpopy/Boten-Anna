@@ -32,7 +32,7 @@ async def is_accepted_text_channel(ctx):
 	else:
 		return ctx.channel.id in utils.getServerSetting(server, 'acceptedTextChannels')
 async def is_bot_connected(ctx):
-	''' Checks if the bot is connected to a voice channel ''' 
+	''' Checks if the bot is connected to a voice channel '''
 	if ctx.voice_client is None:
 		await ctx.send("I'm not connected to a voice channel.")
 		return False
@@ -282,9 +282,9 @@ class Music(commands.Cog):
 					await self.handleNPReactions(reaction, user, mPlayer)
 
 	@commands.command(aliases=['join', 'j'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_text_channel)
 	async def join_(self, ctx):
 		defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
 		if len(defaultPlaylist) == 0:
@@ -300,9 +300,9 @@ class Music(commands.Cog):
 				await mPlayer.now_playing(ctx.channel, preparing=True, sticky=True)
 
 	@commands.command(aliases=['play', 'p'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_text_channel)
 	async def play_(self, ctx, *args):
 		if len(args) == 0:
 			defaultPlaylist = utils.getServerPlaylist(ctx.guild.id)
@@ -323,28 +323,28 @@ class Music(commands.Cog):
 					await mPlayer.now_playing(ctx.channel, preparing=True, sticky=True)
 
 	@commands.command(aliases=['playnext', 'pnext', 'pn'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_text_channel)
 	async def playnext_(self, ctx, *, url):
 		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			await mPlayer.add_song(ctx, url, play_next=True, stream=False)
 
 	@commands.command(aliases=['playnow', 'pnow'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_user_connected)
-	@commands.check(is_accepted_voice_channel)
 	@commands.check(is_dj)
+	@commands.check(is_accepted_voice_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_text_channel)
 	async def playnow_(self, ctx, *, url):
 		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			await mPlayer.add_song(ctx, url, play_now=True, stream=False)
 
 	@commands.command(aliases=['stream', 'playstream'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_user_connected)
 	@commands.check(is_accepted_voice_channel)
+	@commands.check(is_user_connected)
+	@commands.check(is_accepted_text_channel)
 	async def stream_(self, ctx, *, url):
 		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
@@ -492,9 +492,9 @@ class Music(commands.Cog):
 
 
 	@commands.command(aliases=['volume', 'vol', 'v'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
 	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def volume_(self, ctx, *args):
 		mPlayer = self.get_player(ctx.guild)
 
@@ -517,10 +517,10 @@ class Music(commands.Cog):
 			await ctx.send(f"Volume: `{int(mPlayer.volume*100)}`%")
 
 	@commands.command(aliases=['shuffle', 'random', 'randomize'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
-	@commands.check(is_user_connected_to_bot_channel)
 	@commands.check(is_dj)
+	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def shuffle_(self, ctx):
 		mPlayer = self.get_player(ctx.guild)
 		mPlayer.processedQueue.default = []
@@ -538,9 +538,9 @@ class Music(commands.Cog):
 		await ctx.message.add_reaction("👌")
 
 	@commands.command(aliases=['pause'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
 	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def pause_(self, ctx):
 		mPlayer = self.get_player(ctx.guild)
 		if ctx.voice_client.is_paused():
@@ -553,9 +553,9 @@ class Music(commands.Cog):
 		await ctx.message.add_reaction("👌")
 
 	@commands.command(aliases=['resume', 'continue'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
 	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def resume_(self, ctx):
 		mPlayer = self.get_player(ctx.guild)
 		if not ctx.voice_client.is_paused():
@@ -568,9 +568,9 @@ class Music(commands.Cog):
 		await ctx.message.add_reaction("👌")
 
 	@commands.command(aliases=['skip', 's'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
 	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def skip_(self, ctx):
 		vc = ctx.voice_client
 		if not vc.is_playing() and not vc.is_paused():
@@ -582,9 +582,9 @@ class Music(commands.Cog):
 		vc.stop()
 
 	@commands.command(aliases=['remove', 'r'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
 	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def remove_(self, ctx, indexToRemove):
 		mPlayer = self.get_player(ctx.guild)
 		
@@ -622,10 +622,10 @@ class Music(commands.Cog):
 		return await ctx.send(f"Removed #{indexToRemove}: `{elementToRemove.title}` from the queue")
 		
 	@commands.command(aliases=['clear'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
-	@commands.check(is_user_connected_to_bot_channel)
 	@commands.check(is_dj)
+	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def clear_(self, ctx):
 		mPlayer = self.get_player(ctx.guild)
 
@@ -640,8 +640,8 @@ class Music(commands.Cog):
 		await ctx.send("Cleared the queue")
 
 	@commands.command(aliases=['queue', 'q'])
-	@commands.check(is_accepted_text_channel)
 	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def queue_(self, ctx, *args):
 		mPlayer = self.get_player(ctx.guild)
 		queueList = mPlayer.getQueueList(procDefault = False)
@@ -727,10 +727,10 @@ class Music(commands.Cog):
 		await ctx.send(f"Gave '{role.name}' the DJ permission")
 
 	@commands.command(aliases=['leave', 'disconnect', 'stop'])
-	@commands.check(is_accepted_text_channel)
-	@commands.check(is_bot_connected)
-	@commands.check(is_user_connected_to_bot_channel)
 	@commands.check(is_dj)
+	@commands.check(is_user_connected_to_bot_channel)
+	@commands.check(is_bot_connected)
+	@commands.check(is_accepted_text_channel)
 	async def leave_(self, ctx):
 		mPlayer = self.get_player(ctx.guild)
 		mPlayer.stop_player = True
@@ -740,7 +740,7 @@ class Music(commands.Cog):
 		await mPlayer.now_playing()
 
 
-	@commands.group(aliases=['musictc'])
+	@commands.group(aliases=['musictc', 'musictextchannel'])
 	@commands.check(is_dj)
 	async def musictc_(self, ctx):
 		server = str(ctx.guild.id)
@@ -788,7 +788,7 @@ class Music(commands.Cog):
 			await ctx.send(f"That channel is not an allowed text channel")
 
 
-	@commands.group(aliases=['musicvc'])
+	@commands.group(aliases=['musicvc', 'musicvoicechannel'])
 	@commands.check(is_dj)
 	async def musicvc_(self, ctx):
 		server = str(ctx.guild.id)
