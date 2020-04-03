@@ -1,5 +1,7 @@
 from datetime import datetime
-from colorama import Fore as color, Style as style
+from colorama import Fore as color, Style as style, init
+
+init()
 
 green = color.GREEN
 white = color.WHITE
@@ -23,7 +25,7 @@ def command(message, user, server = None, ):
 	print(f"{prefix} {currTime()}: {full_message}")
 
 def info(message):
-	prefix = f"{blue}[INFO]{white}"
+	prefix = f"{blue}{style.BRIGHT}[INFO]{white}{style.RESET_ALL}"
 	print(f"{prefix} {currTime()}: {message}")
 
 def warning(message):
