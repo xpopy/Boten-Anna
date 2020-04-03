@@ -13,13 +13,14 @@ from tendo import singleton
 
 sys.path.append('./cogs')
 import utils
+import log
 
 #Folder and File locations
 cogs_folder = 'cogs'
 
 #Check for Discord API token
 if utils.getConfig('token') == "PUT_DISCORD_TOKEN_HERE": # Don't actually put your token here, it's only a test to see if there exists a token
-	print("\nWrong token, open the settings/config.json file and replace \"PUT_TOKEN_HERE\" with your bots token from the discord developer portal\n" +
+	log.error("Wrong token, open the settings/config.json file and replace \"PUT_TOKEN_HERE\" with your bots token from the discord developer portal\n" +
 			"It has to be surrounded by quotes, example: \"NjQdMzayODY5cTI3ODYtMzA2.XcVZPg.ZjG28fgYJkzEw3abOgs3r3DtJVQ\"\n")
 	quit()
 
@@ -34,18 +35,21 @@ if not os.path.exists(f'./{cogs_folder}'):
 	os.makedirs(f'./{cogs_folder}')
 
 #Load all cogs
-print("Loading modules")
+log.info("Loading modules")
+log.text()
 for filename in os.listdir(f'./{cogs_folder}'):
 	if filename == "utils.py" or filename == "bot.py":
 		continue
 	if filename.endswith('.py'):
 		try:
 			bot.load_extension(f'{cogs_folder}.{filename[:-3]}')
-			print(f'"{filename}" loaded')
+			log.info(f'"{filename}" loaded')
 		except Exception as e:
-			print(f'"{filename}" failed to load:')
-			print(f"\t{e}")
-print()
+			log.error(f'"{filename}" failed to load:')
+			log.text(f"\t{e}")
+log.text()
+log.info("Loading done\n")
+
 
 async def exitWithCode(exitCode, ctx):
 	global returnCode
@@ -79,7 +83,7 @@ async def on_command_error(ctx, error):
 			await utils.helpFunction(ctx, helpCommand = ctx.command.aliases + [ctx.command.name] )
 
 	elif isinstance(error, discord.errors.Forbidden):
-		print("Missing permissions")
+		log.warning("Missing permissions")
 		await ctx.send("Something failed because I'm missing permissions, check documentation or contact the developer")
 
 	elif isinstance(error, commands.errors.CommandNotFound):
@@ -127,9 +131,9 @@ async def log_to_console(ctx):
 	if not ctx.invoked_subcommand:
 		msg = ctx.message
 		if ctx.guild is None:
-			print(f'{msg.created_at}, DM, User: {msg.author}: {msg.content}')
+			log.command(msg.content, msg.author)
 		else:
-			print(f'{msg.created_at}, Server: {msg.guild.name}, User: {msg.author}: {msg.content}')
+			log.command(msg.content, msg.author, server=msg.guild.name)
 	return True
 	
 @tasks.loop(seconds=86400.0)
@@ -155,16 +159,16 @@ async def check_for_update():
 							"\nDon't forget to check the console output to see if the update went well.\n")
 
 				await info.owner.send(updateString)
-				print(updateString)
+				log.info(updateString)
 
 		except Exception as e:
-			print(e)
+			log.text(e)
 
 
 @bot.command()
 @commands.is_owner()
 async def update(ctx):
-	print("\nChecking for updates...\n")
+	log.info("Checking for updates...")
 	gitDir = "./bin/git/cmd/git.exe"
 
 	#Make sure the .git folder exists
@@ -191,7 +195,7 @@ async def update(ctx):
 	try:
 		out = subprocess.check_output(f'{gitDir} pull')
 		text = out.decode("utf-8")
-		print(text)
+		log.text(text)
 
 		if "Already up to date" in text:
 			await ctx.send("Already up to date")
@@ -207,9 +211,6 @@ async def update(ctx):
 
 
 
-	
-
-
 @bot.command()
 @commands.is_owner()
 async def load(ctx, extension):
@@ -218,9 +219,9 @@ async def load(ctx, extension):
 		bot.load_extension(f'{cogs_folder}.{extension}')
 		response = f'\'{extension}\' has been loaded'
 		await ctx.send(response)
-		print(response)
+		log.info(response)
 	except Exception as e:
-		print(e)
+		log.error(e)
 
 @bot.command()
 @commands.is_owner()
@@ -230,11 +231,11 @@ async def unload(ctx, extension):
 		bot.unload_extension(f'{cogs_folder}.{extension}')
 		response = f'\'{extension}\' has been unloaded'
 		await ctx.send(response)
-		print(response)
+		log.info(response)
 	except commands.errors.ExtensionNotLoaded:
 		response = f'\'{filename[:-3]}\' was not loaded, will ignore'
 		await ctx.send(response)
-		print(response)
+		log.error(response)
 
 @bot.command(aliases=["restart"])
 @commands.is_owner()
@@ -246,10 +247,10 @@ async def reload(ctx, extension = None):
 			bot.reload_extension(f'{cogs_folder}.{extension}')
 			response = f'\'{extension}\' has been reloaded'
 			await ctx.send(response)
-			print(response)
+			log.info(response)
 		except Exception as e:
 			await ctx.send(e)
-			print(e)
+			log.error(e)
 		return
 	else:
 		await exitWithCode("restart", ctx)
@@ -307,15 +308,14 @@ async def stats(ctx):
 @bot.command()
 @commands.is_owner()
 async def debug(ctx):
-	from pprint import pprint
 	musicCog = bot.get_cog('music')
 	if musicCog is not None:
 		mPlayer = musicCog.get_player(ctx.guild)
-		print("\n\n")
+		log.text("\n\n")
 		for element in dir(mPlayer):
 			if "__" in element:
 				continue
-			print(f"{element}: \t \t{getattr(mPlayer, element)}\n")
+			log.text(f"{element}: \t \t{getattr(mPlayer, element)}\n")
 
 #Discord.py generates its own help command, lets remove that to make our own
 bot.remove_command('help')
@@ -337,30 +337,38 @@ async def shutdown(ctx):
 
 @bot.event
 async def on_ready():
-	print("Loading done\n")
-	print("-------------------------------------\n")
+	global returnCode
+	global restartReplyChannel
+
+	info = await bot.application_info()
+
+	if restartReplyChannel is None and returnCode == "connection":
+		log.info("Bot has restarted due to connection issue")
+		await info.owner.send("Bot has restarted due to connection issue")
+
+
+	log.text("-------------------------------------\n")
 
 	ver = ""
 	with open('app.json') as json_file:
 		data = json.load(json_file)
 		ver = data['version']
 	
-	print('Client:')
-	print(f"{bot.user.name}, {bot.user.id}, Version: {ver}")
-	print()
+	log.text('Client:')
+	log.text(f"{bot.user.name}, {bot.user.id}, Version: {ver}")
+	log.text()
 
-	info = await bot.application_info()
-	print('Owner:')
-	print(f"{info.owner.name}, {info.owner.id}")
-	print()
+	log.text('Owner:')
+	log.text(f"{info.owner.name}, {info.owner.id}")
+	log.text()
 	if not bot.guilds:
-		print("The bot haven't joined any servers, copy the link below and add the bot to your server to get started\n"
+		log.text("The bot haven't joined any servers, copy the link below and add the bot to your server to get started\n"
 			 		+ f"https://discordapp.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=3501120&scope=bot")
 	else:
-		print('Guild list:')
+		log.text('Guild list:')
 		for guild in bot.guilds:
-			print(f"{guild.name}, {guild.id}")
-	print()
+			log.text(f"{guild.name}, {guild.id}")
+	log.text()
 	
 	if restartReplyChannel is not None:
 		channel = bot.get_channel(int(restartReplyChannel))
@@ -372,7 +380,10 @@ async def on_ready():
 				await channel.send("Succesfully restarted")
 			elif returnCode == "update":
 				await channel.send("Succesfully updated")
+		restartReplyChannel = None
+		returnCode = "connection"
 
+	
 	check_for_update.restart()
 
 	
@@ -398,6 +409,6 @@ def run(action = "exit", channelID = None):
 		
 	except Exception as e:
 		if isinstance(e, discord.errors.LoginFailure):
-			print("\nWrong token, please make sure the token in the config file is the corrent one\n\n")
+			log.error("\nWrong token, please make sure the token in the config file is the corrent one\n\n")
 		else:
-			print(e)
+			log.error(e)

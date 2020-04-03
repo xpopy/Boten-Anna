@@ -21,6 +21,7 @@ psutil = "*"
 tendo = "*"
 wikipedia-api = "*"
 wikipedia = "*"
+colorama = "*"
 
 [requires]
 python_version = "3.8.1"

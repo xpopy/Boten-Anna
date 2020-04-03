@@ -1,3 +1,6 @@
+on_ready: restart all other player functions too (would fix bot breaking from losing connection)
+	rewrite loadging of all cogs to reload if they're already loaded, make it a function that runs on on_ready
+
 REWRITE help, automatically get commands from custom.py and their description
 read into default help command https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#help-commands
 	show subscommands in the main help menu
