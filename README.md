@@ -1,10 +1,10 @@
 # Boten-Anna
 A discord bot written in python
 
-![Main](https://i.imgur.com/YStEohh.png)
+![Main](https://i.imgur.com/5nY3EJD.png)
 
 # Note
-The bot is not finished, it's only a personal project I've been working on for some time. It works, but there may be bugs hiding in some corners. If you do find a bug, please do report it as an issue and I will do my best to fix it.
+The bot is not finished, it's only a personal project I've been working on for some time. It works, but there may be bugs hiding in some corners. If you find a bug, please do report it as an issue and I will do my best to fix it.
 
 
 # Installation (Windows)
