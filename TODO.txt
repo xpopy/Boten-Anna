@@ -1,3 +1,8 @@
+Check for python version in run.bat
+!p songname - breaks the now playing message
+
+in player controls, check if the controls exists every time we update
+
 on_ready: restart all other player functions too (would fix bot breaking from losing connection)
 	rewrite loadging of all cogs to reload if they're already loaded, make it a function that runs on on_ready
 
@@ -9,10 +14,12 @@ read into default help command https://discordpy.readthedocs.io/en/latest/ext/co
 	Move it to initialize so it doesn't have to create it every time we want to check help
 
 [ext.commands] Add support for calling a Command as a regular function.
-	specially for help
+	might work for help command
 
-Try out youtube api for searching and for getting playlist songs	
 set up a wiki like https://github.com/jagrosh/MusicBot/wiki/Setup
+	list of commands
+	usage gifs and pictures
+
 maybe use threads for updating files https://stackoverflow.com/a/35240362
 
 commands to add:
@@ -25,11 +32,11 @@ fix error message on restarting when bot is connected to voice
 convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
 	Allows for seeking, set_eq
 
-replace prints with some sort of logging
 Write a short documentation on what functions do
 
 re-enable playing playlists
 	best would probably be to webscrape the playlist to get all info
+	Try out youtube api for searching and for getting playlist songs
 	--playlist-random  may help
 	maybe make it like default playlist, a queue of urls
 		shuffle?
@@ -42,5 +49,5 @@ check if youtube playlist has a "last edited" field so i can save the playlist a
 add undo: https://github.com/pckv/pcbot/blob/master/plugins/music.py
 play youtube radio
 play streams
-soundcloud (apparently youtubedl already supports it, look it up
+soundcloud (apparently youtubedl already supports it, look it up)
 
