@@ -129,7 +129,6 @@ class MusicPlayer:
 			await self.stop_update_np.wait()
 			try:
 				async with timeout(5):
-					
 					await self.update_np.wait()
 					self.update_np.clear()
 
@@ -147,11 +146,9 @@ class MusicPlayer:
 				timeDiff = time.time() - localTimezoneCreatedAt.timestamp()
 
 			if (not np_msg) or (sticky and np_msg and np_msg.channel.last_message_id != np_msg.id and timeDiff > 10):
-				# Sticky the post
 				if self.stop_update_np.is_set():
 					await self.now_playing(sticky=True)
 			else:
-				# Don't sticky the post
 				if self.stop_update_np.is_set():
 					await self.now_playing()
 			
@@ -425,7 +422,6 @@ class MusicPlayer:
 		currentPlayer = self.current
 		msg = self.current_np_message
 
-
 		# if not connected
 		if not self._guild.voice_client:
 			if msg:
@@ -459,7 +455,6 @@ class MusicPlayer:
 				message = await channel.send(content="Now playing:", embed=embed)
 				self.current_np_message = message
 		
-
 		# create now playing
 		else:
 			description = utils.create_progressbar(
