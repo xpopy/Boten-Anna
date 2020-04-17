@@ -353,7 +353,6 @@ class MusicPlayer:
 				print(e)
 
 	async def add_song(self, ctx, url, stream = False, play_next = False, play_now = False):
-		async with ctx.typing():
 			try:
 				url = parseYTurl(url)
 			except:
