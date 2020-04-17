@@ -1,5 +1,5 @@
+"i'm xxx", bot responds "Hi xxx, I'm bot", enable/disable/5% or something
 Check for python version in run.bat
-!p songname - breaks the now playing message
 
 in player controls, check if the controls exists every time we update
 
