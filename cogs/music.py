@@ -312,15 +312,16 @@ class Music(commands.Cog):
 		if(await self.joinVoice(ctx)):
 			mPlayer = self.get_player(ctx.guild)
 			if len(args) > 0:
+				val = utils.getServerSetting(ctx.guild.id, 'nowPlayingAuto')
+				if val:
+					await mPlayer.now_playing(channel=ctx.channel, preparing=True, sticky=True)
 				url = " ".join(args)
 				await mPlayer.add_song(ctx, url, stream=False)
 			else:
 				mPlayer.downloader.set()
-				
-				await asyncio.sleep(1)
 				val = utils.getServerSetting(ctx.guild.id, 'nowPlayingAuto')
 				if val:
-					await mPlayer.now_playing(ctx.channel, preparing=True, sticky=True)
+					await mPlayer.now_playing(channel=ctx.channel, preparing=True, sticky=True)
 
 	@commands.command(aliases=['playnext', 'pnext', 'pn'])
 	@commands.check(is_accepted_voice_channel)

@@ -326,9 +326,7 @@ class MusicPlayer:
 				self.timePaused = None
 				
 				self.update_np.set()
-
-				if self.current_np_message:
-					self.stop_update_np.set()
+				self.stop_update_np.set()
 
 				self._guild.voice_client.play(songObj.source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.playNext.set))
 				await self.playNext.wait()
@@ -350,74 +348,74 @@ class MusicPlayer:
 				print(e)
 
 	async def add_song(self, ctx, url, stream = False, play_next = False, play_now = False):
-			try:
-				url = parseYTurl(url)
-			except:
-				None
-			
-			if utils.isPlaylist(url):
-				if True:
-					await ( await ctx.send(f"Playlists aren't implemented yet sorry! Please add a playlist to the default playlist instead")).delete(delay=15)
+		try:
+			url = parseYTurl(url)
+		except:
+			None
+		
+		if utils.isPlaylist(url):
+			if True:
+				await ( await ctx.send(f"Playlists aren't implemented yet sorry! Please add a playlist to the default playlist instead")).delete(delay=15)
+				await ctx.message.delete(delay=15)
+				return
+			else:
+				if play_next or play_now:
+					await ( await ctx.send(f"Can't play a playlist using playnow or playnext, sorry!")).delete(delay=15)
 					await ctx.message.delete(delay=15)
 					return
+				
+				title, url, songs = await utils.get_playlist_info(url)
+				self.prepareQueue.play = self.prepareQueue.play + songs
+				self.downloader.set()
+				embed = discord.Embed(title=title, url=url, description=f"[{len(songs)} queued]")
+				await ctx.send(embed=embed)
+
+		else:
+			title, url, thumbnail, duration = await utils.get_song_data(url)
+
+			songObj = Song(title=title, url=url, thumbnail=thumbnail, duration=duration, requester=ctx.author.mention)
+
+			if play_next:
+				songObj.playnext = True
+				self.prepareQueue.playnext = [songObj] + self.prepareQueue.playnext
+				self.downloader.set()
+
+				embed = discord.Embed(title=title, url=url, description=f"Queued **#1**, `[{utils.convert_seconds(duration)}]`")
+				embed.set_thumbnail(url=thumbnail)
+				await ctx.send(embed=embed)
+
+			elif play_now:
+				songObj.playnext = True
+				self.prepareQueue.playnow.append(songObj)
+				self.downloader.set()
+				
+				val = utils.getServerSetting(self._guild.id, 'nowPlayingAuto')
+				if val:
+					await self.now_playing(channel=ctx.channel, preparing=True)
 				else:
-					if play_next or play_now:
-						await ( await ctx.send(f"Can't play a playlist using playnow or playnext, sorry!")).delete(delay=15)
-						await ctx.message.delete(delay=15)
-						return
-					
-					title, url, songs = await utils.get_playlist_info(url)
-					self.prepareQueue.play = self.prepareQueue.play + songs
-					self.downloader.set()
-					embed = discord.Embed(title=title, url=url, description=f"[{len(songs)} queued]")
+					embed = discord.Embed(title=title, url=url, description=f"`[{utils.convert_seconds(duration)}]`")
+					embed.set_thumbnail(url=thumbnail)
 					await ctx.send(embed=embed)
+
+			elif self.current != None:
+				self.prepareQueue.play.append(songObj)
+				self.downloader.set()
+
+				embed = discord.Embed(title=title, url=url, description=f"Queued **#{self.getQueuedAmount(procDefault = False, prepareDefault = False)}**, `[{utils.convert_seconds(duration)}]`")
+				embed.set_thumbnail(url=thumbnail)
+				await ctx.send(embed=embed)
 
 			else:
-				title, url, thumbnail, duration = await utils.get_song_data(url)
-
-				songObj = Song(title=title, url=url, thumbnail=thumbnail, duration=duration, requester=ctx.author.mention)
-
-				if play_next:
-					songObj.playnext = True
-					self.prepareQueue.playnext = [songObj] + self.prepareQueue.playnext
-					self.downloader.set()
-
-					embed = discord.Embed(title=title, url=url, description=f"Queued **#1**, `[{utils.convert_seconds(duration)}]`")
-					embed.set_thumbnail(url=thumbnail)
-					await ctx.send(embed=embed)
-
-				elif play_now:
-					songObj.playnext = True
-					self.prepareQueue.playnow.append(songObj)
-					self.downloader.set()
-					
-					val = utils.getServerSetting(self._guild.id, 'nowPlayingAuto')
-					if val:
-						await self.now_playing(channel=ctx.channel, preparing=True)
-					else:
-						embed = discord.Embed(title=title, url=url, description=f"`[{utils.convert_seconds(duration)}]`")
-						embed.set_thumbnail(url=thumbnail)
-						await ctx.send(embed=embed)
-
-				elif self.current != None:
-					self.prepareQueue.play.append(songObj)
-					self.downloader.set()
-
-					embed = discord.Embed(title=title, url=url, description=f"Queued **#{self.getQueuedAmount(procDefault = False, prepareDefault = False)}**, `[{utils.convert_seconds(duration)}]`")
-					embed.set_thumbnail(url=thumbnail)
-					await ctx.send(embed=embed)
-
+				self.prepareQueue.play.append(songObj)
+				self.downloader.set()
+				
+				val = utils.getServerSetting(self._guild.id, 'nowPlayingAuto')
+				if val:
+					await self.now_playing(channel=ctx.channel, preparing=True, sticky=True)
 				else:
-					self.prepareQueue.play.append(songObj)
-					self.downloader.set()
-					
-					val = utils.getServerSetting(self._guild.id, 'nowPlayingAuto')
-					if val:
-						await self.now_playing(channel=ctx.channel)
-					else:
-						embed = discord.Embed(title=title, url=url, description=f"`[{utils.convert_seconds(duration)}]`")
-						embed.set_thumbnail(url=thumbnail)
-						await ctx.send(embed=embed)
+					embed = discord.Embed(title=title, url=url, description=f"`[{utils.convert_seconds(duration)}]`")
+					embed.set_thumbnail(url=thumbnail)
+					await ctx.send(embed=embed)
 	async def now_playing(self, channel = None, preparing = False, sticky = False):
 		currentPlayer = self.current
 		msg = self.current_np_message
@@ -428,8 +426,7 @@ class MusicPlayer:
 				await msg.edit(content="Player stopped", embed=None)
 				await utils.set_message_reactions(msg, [])
 				self.current_np_message = None
-			self.stop_update_np.set()
-
+			self.stop_update_np.clear()
 
 		# if nothing is playing
 		elif not currentPlayer:
@@ -481,12 +478,12 @@ class MusicPlayer:
 			else:
 				em =  msg.embeds[0].description
 				await msg.edit(embed=embed)
-			
+
 			# set controls
 			controls = utils.getServerSetting(self._guild.id, 'nowPlayingControls')
 			if not controls:
 				await utils.set_message_reactions(msg, [])
-			elif not em or em == "There's no song playing" or em == "Preparing song..." or em == "Downloading song..."  or em == "Normalizing song volume..." :
+			elif not em or em == "There's no song playing" or em == "Preparing song..." or em == "Downloading song..."  or em == "Loudness normalization..." :
 				await utils.set_message_reactions(msg, ["⏯️", "⏭️", "🔉", "🔊"])
 	async def setVolume(self, newVolume):
 		self.volume = newVolume
