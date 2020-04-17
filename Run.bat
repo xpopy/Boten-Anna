@@ -58,7 +58,7 @@ IF %1.==. set TRUE=1
 IF %2.==. set TRUE=1
 IF defined TRUE (
 	pipenv run python "main.py"
+	pause
 ) else (
 	pipenv run python "main.py" %1 %2
 )
-pause
