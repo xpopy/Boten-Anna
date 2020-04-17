@@ -157,6 +157,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		mPlayer.update_np_downloading.set()
 		if not mPlayer.current:
 			mPlayer.update_np.set()
+			mPlayer.stop_update_np.set()
+			
 
 		with concurFuture.ThreadPoolExecutor() as executor:
 			to_run = partial(ytdl.extract_info, url, download=not stream)
@@ -165,6 +167,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		mPlayer.update_np_downloading.clear()
 		if not data:
 			return None
+		
+		mPlayer.update_np_normalizing.set()
 
 		if 'entries' in data:
 			# take first item from a playlist
@@ -172,9 +176,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 		filename = data['url'] if stream else ytdl.prepare_filename(data)	
 	
-		mPlayer.update_np_normalizing.set()
 		if not mPlayer.current:
 			mPlayer.update_np.set()
+			mPlayer.stop_update_np.set()
 
 		if not stream:
 			with concurFuture.ThreadPoolExecutor() as executor:
