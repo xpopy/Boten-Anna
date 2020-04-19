@@ -24,6 +24,8 @@ ffmpeg_options = {
 # Suppress noise about console usage from errors
 youtubeUtils.bug_reports_message = lambda: ''
 ytdl_format_options = {
+	'no-cache-dir': True,
+	'rm-cache-dir': True,
 	'dump-json': True,
 	'limit-rate': "2M",
 	'flat-playlist': True,
