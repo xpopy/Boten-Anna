@@ -16,7 +16,7 @@ def currTime():
 def text(message = ""):
 	print(message)
 
-def command(message, user, server = None, ):
+def command(message, user, server = None ):
 	prefix = f"{green}[CMD]{white}"
 	if server:
 		full_message = f'{green}Server:{white} {server}, {green}User:{white} {user}: {message}'

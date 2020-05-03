@@ -60,7 +60,7 @@ REM Start main.py
 pipenv run python "main.py" "%exitCode%" "%returnChannel%"
 
 REM Check if exitCode file exists, else quit
-if not exist exitCode.tmp(
+if not exist exitCode.tmp (
 	pause
 	Exit
 )
