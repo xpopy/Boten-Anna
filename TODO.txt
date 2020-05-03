@@ -1,6 +1,3 @@
-rewrite Run.bat to a loop and read a file exitCode which has which reason we exited and the reply channel
-	This is to stop multiple python and cmd processes staying alive after restarting the bot
-
 !play https://www.youtube.com/watch?v=5abamRO41fE&list=WL&index=2&t=0s
 	breaks the bot because it thinks it's a playlist
 "i'm xxx", bot responds "Hi xxx, I'm bot", enable/disable/5% or something
@@ -31,7 +28,6 @@ commands to add:
 	add a command to limit normalization to either on, only default playlist, or off.
 		Maybe default to off and only allow creator to allow it on any server they want
 
-if a songs audio levels are close enough then don't normalize it
 fix error message on restarting when bot is connected to voice
 
 convert to https://wavelink.readthedocs.io/en/latest/wavelink.html#player
