@@ -2,12 +2,13 @@ import importlib
 import subprocess
 import sys
 import os
+import cogs.log as log
 
 
 if not os.path.exists('./cogs') or not os.path.exists('./cogs/bot.py') or not os.path.exists('./cogs/utils.py'):
-	print()
-	print("Missing important files, please reinstall and read the installation instructions")
-	print()
+	log.text()
+	log.error("Missing important files, please reinstall and read the installation instructions")
+	log.text()
 	exit()
 
 import cogs.bot as bot
@@ -31,13 +32,13 @@ if __name__ == "__main__":
 		else:
 			exitCode, channelID = bot.run()
 	except Exception as e:
-		print(e)
+		log.error(e)
 
 	if exitCode == "restart":
-		print()
-		print("Restarting Bot")
-		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
-		print()
+		log.text()
+		log.info("Restarting Bot")
+		log.text("Note: Don't worry if you get an error while the bot is restarting, it's fine")
+		log.text()
 		exitCodeFile = open("exitCode.tmp","w+")
 		exitCodeFile.write(exitCode + "\n")
 		exitCodeFile.write(channelID)
