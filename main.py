@@ -26,7 +26,10 @@ if __name__ == "__main__":
 		channelID = sys.argv[2]
 
 	try:
-		exitCode, channelID = bot.run(action, channelID)
+		if action:
+			exitCode, channelID = bot.run(action, channelID)
+		else:
+			exitCode, channelID = bot.run()
 	except Exception as e:
 		print(e)
 
@@ -35,4 +38,7 @@ if __name__ == "__main__":
 		print("Restarting Bot")
 		print("Note: Don't worry if you get an error while the bot is restarting, it's fine")
 		print()
-		subprocess.call(["Run.bat", exitCode, channelID])
+		exitCodeFile = open("exitCode.tmp","w+")
+		exitCodeFile.write(exitCode + "\n")
+		exitCodeFile.write(channelID)
+		exitCodeFile.close()

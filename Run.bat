@@ -1,10 +1,14 @@
 @echo off
+set "exitCode="
+set "returnChannel="
+
+:init
 @echo Starting checks
 @echo. 
 
 
-:: Check for .git folder ::
-:: Install it by cloning the repository, moving the .git folder and then deleting the clone ::
+REM Check for .git folder ::
+REM Install it by cloning the repository, moving the .git folder and then deleting the clone ::
 if not exist .git\NUL (
 	@echo .git folder not found (happens if you download as zip^)
 	@echo Installing .git (can take a minute depending on internet speeds^)
@@ -17,7 +21,7 @@ if not exist .git\NUL (
 )
 
 
-:: Check for pipenv and install if not found ::
+REM Check for pipenv and install if not found ::
 @echo Checking for pipenv...
 pip --disable-pip-version-check list | findstr pipenv > tmpFile 
 set /p myvar= < tmpFile 
@@ -32,7 +36,7 @@ if "%myvar%" == "" (
 )
 
 
-:: Create Pipfile.lock if it doesn't exist ::
+REM Create Pipfile.lock if it doesn't exist ::
 if not exist Pipfile.lock (
 	@echo Creating Pipfile.lock, this might take a minute...
 	pipenv lock > tmpFile 2>&1
@@ -41,7 +45,7 @@ if not exist Pipfile.lock (
 )
 
 
-:: Check dependencies ::
+REM Check dependencies ::
 @echo Checking pipenv dependencies...
 pipenv install > tmpFile 2>&1
 del tmpFile
@@ -52,13 +56,32 @@ del tmpFile
 @echo.
 
 
-:: Run main program either without or with 2 argumnets ::
-set "TRUE="
-IF %1.==. set TRUE=1
-IF %2.==. set TRUE=1
-IF defined TRUE (
-	pipenv run python "main.py"
+REM Start main.py
+pipenv run python "main.py" "%exitCode%" "%returnChannel%"
+
+REM Check if exitCode file exists, else quit
+if not exist exitCode.tmp(
 	pause
-) else (
-	pipenv run python "main.py" %1 %2
+	Exit
 )
+
+REM Read from exitCode file
+for /f "tokens=*" %%a in (exitCode.tmp) do (
+	if "%%a" == "exit" (
+		REM Quit batch
+		pause
+		Exit
+	)
+	if "%%a" == "restart" (
+		set exitCode=restart
+	) else (
+		set returnChannel=%%a
+	)
+)
+
+REM Delete the file afterwards
+del exitCode.tmp
+
+REM Jump to start
+goto init
+
