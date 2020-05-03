@@ -1,3 +1,8 @@
+rewrite Run.bat to a loop and read a file exitCode which has which reason we exited and the reply channel
+	This is to stop multiple python and cmd processes staying alive after restarting the bot
+
+!play https://www.youtube.com/watch?v=5abamRO41fE&list=WL&index=2&t=0s
+	breaks the bot because it thinks it's a playlist
 "i'm xxx", bot responds "Hi xxx, I'm bot", enable/disable/5% or something
 Check for python version in run.bat
 
@@ -41,7 +46,6 @@ re-enable playing playlists
 	maybe make it like default playlist, a queue of urls
 		shuffle?
 
-is typing is bugged
 check if youtube playlist has a "last edited" field so i can save the playlist and not update it all the time
 	maybe rework saving playlists so it saves names (name of playlist), time etc?
 	set this once done    prepareDefault = True   in   nextSong = getQueueList(mPlayer, procDefault = True, prepareDefault = False)[0]

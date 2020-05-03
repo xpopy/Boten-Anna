@@ -8,6 +8,7 @@ from glob import glob as globglob
 from subprocess import PIPE as subprocPIPE
 from subprocess import STDOUT as subprocSTDOUT
 from subprocess import Popen as subprocPopen
+from subprocess import call as subprocCall
 
 import discord
 from youtube_dl import YoutubeDL as youtubeDownloader
@@ -24,8 +25,6 @@ ffmpeg_options = {
 # Suppress noise about console usage from errors
 youtubeUtils.bug_reports_message = lambda: ''
 ytdl_format_options = {
-	'no-cache-dir': True,
-	'rm-cache-dir': True,
 	'dump-json': True,
 	'limit-rate': "2M",
 	'flat-playlist': True,
@@ -150,6 +149,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		
 	@classmethod
 	async def from_url(cls, mPlayer, url, *, loop=None, stream=False):
+
+		#reset youtube-dl cache
+		cmdNormalize = ["pipenv", "run", "youtube-dl", "--rm-cache-dir"]
+		subprocPopen(cmdNormalize, stdout=subprocPIPE, stderr=subprocPIPE, universal_newlines=False)
+
 		loop = loop or asyncio.get_event_loop()
 		ytID = getYTid(url)
 		existingFiles = globglob(f"./music_cache/youtube-{ytID}.*")
