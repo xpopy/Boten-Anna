@@ -383,8 +383,8 @@ async def on_ready():
 		restartReplyChannel = None
 		returnCode = "connection"
 
-	
-	check_for_update.restart()
+	check_for_update.start()
+	#check_for_update.restart()
 
 	
 
