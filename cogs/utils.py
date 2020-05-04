@@ -61,7 +61,7 @@ def getConfig(key):
 					'}')
 			f.write(data)
 			print()
-			print("Generated config file, open it and insert the bot token")
+			print("Generated settings/config.json, open it and insert the bot token")
 			print()
 			quit()
 	else:
