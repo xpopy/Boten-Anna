@@ -1,4 +1,5 @@
 !update force
+move singleton to main.py
 !play https://www.youtube.com/watch?v=5abamRO41fE&list=WL&index=2&t=0s
 	breaks the bot because it thinks it's a playlist
 "i'm xxx", bot responds "Hi xxx, I'm bot", enable/disable/5% or something
