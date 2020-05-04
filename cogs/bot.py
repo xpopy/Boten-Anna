@@ -207,7 +207,7 @@ async def update(ctx):
 
 	except subprocess.CalledProcessError:
 		await ctx.send("Could not update the bot. You have modified files that are tracked by Git (e.g the bot\'s source files).\n" +
-						"You will need to run 'git pull' yourself or manually update the files.")
+						"You will need to run 'git pull' yourself or do a clean reinstall.")
 
 
 
