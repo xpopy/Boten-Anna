@@ -16,6 +16,8 @@ if not exist .git\NUL (
 	attrib -h Boten-Anna\.git
 	move Boten-Anna\.git .git >nul
 	rmdir Boten-Anna\ /s /q
+	bin\git\cmd\git.exe stash > tmpFile 2>&1
+	bin\git\cmd\git.exe rebase > tmpFile 2>&1
 	@echo  .git is installed
 	@echo.
 )
