@@ -345,6 +345,7 @@ async def on_ready():
 	if restartReplyChannel is None and returnCode == "connection":
 		log.info("Bot has restarted due to connection issue")
 		await info.owner.send("Bot has restarted due to connection issue")
+		return
 
 
 	log.text("-------------------------------------\n")
@@ -380,11 +381,10 @@ async def on_ready():
 				await channel.send("Succesfully restarted")
 			elif returnCode == "update":
 				await channel.send("Succesfully updated")
-		restartReplyChannel = None
-		returnCode = "connection"
-
+	
+	restartReplyChannel = None
+	returnCode = "connection"
 	check_for_update.start()
-	#check_for_update.restart()
 
 	
 
