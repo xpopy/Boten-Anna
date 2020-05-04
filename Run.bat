@@ -22,7 +22,7 @@ if not exist .git\NUL (
 
 
 REM Check for pipenv and install if not found ::
-@echo Checking for pipenv...
+@echo Checking for pipenv
 pip --disable-pip-version-check list | findstr pipenv > tmpFile 
 set /p myvar= < tmpFile 
 del tmpFile 
@@ -46,7 +46,7 @@ if not exist Pipfile.lock (
 
 
 REM Check dependencies ::
-@echo Checking pipenv dependencies...
+@echo Checking pipenv dependencies
 pipenv install > tmpFile 2>&1
 del tmpFile
 
