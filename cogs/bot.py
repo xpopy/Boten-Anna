@@ -397,7 +397,7 @@ def run(action = "exit", channelID = None):
 		try:
 			me = singleton.SingleInstance() 
 		except singleton.SingleInstanceException as e:
-			return returnCode, restartReplyChannel
+			return "exit", None
 
 		returnCode = action
 		restartReplyChannel = channelID
