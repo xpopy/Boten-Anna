@@ -25,7 +25,7 @@ if not exist .git\NUL (
 
 REM Check for pipenv and install if not found ::
 @echo Checking for pipenv
-pip --disable-pip-version-check list | findstr pipenv > tmpFile 
+python -m pip --disable-pip-version-check list | findstr pipenv > tmpFile 
 set /p myvar= < tmpFile 
 del tmpFile 
 if "%myvar%" == "" (
