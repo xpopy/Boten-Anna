@@ -165,7 +165,7 @@ async def check_for_update():
 			log.text(e)
 
 
-@commands.group(aliases=['update'])
+@bot.group(aliases=['update'])
 @commands.is_owner()
 async def update_(ctx):
 	if ctx.invoked_subcommand is None:
