@@ -1,3 +1,8 @@
+# [RIP Discord.py](https://gist.github.com/Rapptz/4a2f62751b9600a31a0d3c78100287f1)
+Discord.py has ceased development which this project was built upon. It may or may not still work, but Discord will change their API sooner or later and break the bot. You have been warned.
+
+
+
 # Boten-Anna
 A discord bot written in python
 
